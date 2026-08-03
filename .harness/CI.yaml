@@ -26,7 +26,23 @@ pipeline:
                       type: Inline
                       spec:
                         script: |-
-                          source .harness/setup-node.sh
+                          set -euo pipefail
+                          NODE_VERSION="22.14.0"
+                          NODE_HOME="$PWD/.harness-node"
+                          if [[ ! -x "$NODE_HOME/bin/node" ]]; then
+                            case "$(uname -m)" in
+                              x86_64) NODE_ARCH="x64" ;;
+                              arm64|aarch64) NODE_ARCH="arm64" ;;
+                              *) echo "Unsupported runner architecture: $(uname -m)" >&2; exit 1 ;;
+                            esac
+                            mkdir -p "$NODE_HOME"
+                            curl --fail --location --silent --show-error \
+                              "https://nodejs.org/dist/v${NODE_VERSION}/node-v${NODE_VERSION}-linux-${NODE_ARCH}.tar.xz" \
+                              | tar -xJ --strip-components=1 -C "$NODE_HOME"
+                          fi
+                          export PATH="$NODE_HOME/bin:$PATH"
+                          node --version
+                          npm --version
                           npm ci
                     environmentVariables: []
                     outputVariables: []
@@ -45,7 +61,7 @@ pipeline:
                           type: Inline
                           spec:
                             script: |-
-                              source .harness/setup-node.sh
+                              export PATH="$PWD/.harness-node/bin:$PATH"
                               npm run test:coverage
                         environmentVariables: []
                         outputVariables: []
@@ -63,7 +79,7 @@ pipeline:
                           type: Inline
                           spec:
                             script: |-
-                              source .harness/setup-node.sh
+                              export PATH="$PWD/.harness-node/bin:$PATH"
                               npm run format:verify
                         environmentVariables: []
                         outputVariables: []
@@ -81,7 +97,7 @@ pipeline:
                           type: Inline
                           spec:
                             script: |-
-                              source .harness/setup-node.sh
+                              export PATH="$PWD/.harness-node/bin:$PATH"
                               npm run lint
                         environmentVariables: []
                         outputVariables: []
@@ -99,7 +115,7 @@ pipeline:
                           type: Inline
                           spec:
                             script: |-
-                              source .harness/setup-node.sh
+                              export PATH="$PWD/.harness-node/bin:$PATH"
                               npm run tsc
                         environmentVariables: []
                         outputVariables: []
