@@ -20,6 +20,8 @@ pipeline:
                   spec:
                     shell: Bash
                     executionTarget: {}
+                    delegateSelectors:
+                      - harness-delegate
                     source:
                       type: Inline
                       spec:
@@ -35,6 +37,8 @@ pipeline:
                       spec:
                         shell: Bash
                         executionTarget: {}
+                        delegateSelectors:
+                          - harness-delegate
                         source:
                           type: Inline
                           spec:
@@ -49,6 +53,8 @@ pipeline:
                       spec:
                         shell: Bash
                         executionTarget: {}
+                        delegateSelectors:
+                          - harness-delegate
                         source:
                           type: Inline
                           spec:
@@ -63,6 +69,8 @@ pipeline:
                       spec:
                         shell: Bash
                         executionTarget: {}
+                        delegateSelectors:
+                          - harness-delegate
                         source:
                           type: Inline
                           spec:
@@ -77,6 +85,8 @@ pipeline:
                       spec:
                         shell: Bash
                         executionTarget: {}
+                        delegateSelectors:
+                          - harness-delegate
                         source:
                           type: Inline
                           spec:
