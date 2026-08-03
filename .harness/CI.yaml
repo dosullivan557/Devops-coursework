@@ -25,7 +25,9 @@ pipeline:
                     source:
                       type: Inline
                       spec:
-                        script: npm install
+                        script: |-
+                          source .harness/setup-node.sh
+                          npm ci
                     environmentVariables: []
                     outputVariables: []
                   timeout: 10m
@@ -42,7 +44,9 @@ pipeline:
                         source:
                           type: Inline
                           spec:
-                            script: npm run test:coverage
+                            script: |-
+                              source .harness/setup-node.sh
+                              npm run test:coverage
                         environmentVariables: []
                         outputVariables: []
                       timeout: 10m
@@ -58,7 +62,9 @@ pipeline:
                         source:
                           type: Inline
                           spec:
-                            script: npm run format:verify
+                            script: |-
+                              source .harness/setup-node.sh
+                              npm run format:verify
                         environmentVariables: []
                         outputVariables: []
                       timeout: 10m
@@ -74,7 +80,9 @@ pipeline:
                         source:
                           type: Inline
                           spec:
-                            script: npm run lint
+                            script: |-
+                              source .harness/setup-node.sh
+                              npm run lint
                         environmentVariables: []
                         outputVariables: []
                       timeout: 10m
@@ -90,7 +98,9 @@ pipeline:
                         source:
                           type: Inline
                           spec:
-                            script: npm run tsc
+                            script: |-
+                              source .harness/setup-node.sh
+                              npm run tsc
                         environmentVariables: []
                         outputVariables: []
                       timeout: 10m
