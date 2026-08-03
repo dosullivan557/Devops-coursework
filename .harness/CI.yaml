@@ -1,0 +1,87 @@
+pipeline:
+  name: CI
+  identifier: CI
+  projectIdentifier: default_project
+  orgIdentifier: default
+  tags: {}
+  stages:
+    - stage:
+        name: Test
+        identifier: Test
+        description: ""
+        type: Custom
+        spec:
+          execution:
+            steps:
+              - step:
+                  type: ShellScript
+                  name: Install
+                  identifier: Install
+                  spec:
+                    shell: Bash
+                    executionTarget: {}
+                    source:
+                      type: Inline
+                      spec:
+                        script: npm install
+                    environmentVariables: []
+                    outputVariables: []
+                  timeout: 10m
+              - parallel:
+                  - step:
+                      type: ShellScript
+                      name: Test
+                      identifier: Test
+                      spec:
+                        shell: Bash
+                        executionTarget: {}
+                        source:
+                          type: Inline
+                          spec:
+                            script: npm run test:coverage
+                        environmentVariables: []
+                        outputVariables: []
+                      timeout: 10m
+                  - step:
+                      type: ShellScript
+                      name: Formatting
+                      identifier: Formatting
+                      spec:
+                        shell: Bash
+                        executionTarget: {}
+                        source:
+                          type: Inline
+                          spec:
+                            script: npm run format:verify
+                        environmentVariables: []
+                        outputVariables: []
+                      timeout: 10m
+                  - step:
+                      type: ShellScript
+                      name: Linting
+                      identifier: Linting
+                      spec:
+                        shell: Bash
+                        executionTarget: {}
+                        source:
+                          type: Inline
+                          spec:
+                            script: npm run lint
+                        environmentVariables: []
+                        outputVariables: []
+                      timeout: 10m
+                  - step:
+                      type: ShellScript
+                      name: Typescript Check
+                      identifier: Typescript_Check
+                      spec:
+                        shell: Bash
+                        executionTarget: {}
+                        source:
+                          type: Inline
+                          spec:
+                            script: npm run tsc
+                        environmentVariables: []
+                        outputVariables: []
+                      timeout: 10m
+        tags: {}
