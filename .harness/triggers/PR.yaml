@@ -1,0 +1,32 @@
+trigger:
+  name: Pull request
+  identifier: Pull_request
+  enabled: true
+  encryptedWebhookSecretIdentifier: ""
+  description: ""
+  tags: {}
+  orgIdentifier: default
+  stagesToExecute:
+    - Test
+  projectIdentifier: default_project
+  pipelineIdentifier: CI
+  source:
+    type: Webhook
+    spec:
+      type: Github
+      spec:
+        type: PullRequest
+        spec:
+          connectorRef: Github
+          autoAbortPreviousExecutions: false
+          payloadConditions:
+            - key: targetBranch
+              operator: Equals
+              value: main
+          headerConditions: []
+          actions:
+            - Edit
+            - Open
+            - Reopen
+            - Synchronize
+  pipelineBranchName: <+trigger.branch>

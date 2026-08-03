@@ -21,7 +21,7 @@ pipeline:
                     shell: Bash
                     executionTarget: {}
                     delegateSelectors:
-                      - harness-delegate
+                      - docker-delegate
                     source:
                       type: Inline
                       spec:
@@ -38,7 +38,7 @@ pipeline:
                         shell: Bash
                         executionTarget: {}
                         delegateSelectors:
-                          - harness-delegate
+                          - docker-delegate
                         source:
                           type: Inline
                           spec:
@@ -54,7 +54,7 @@ pipeline:
                         shell: Bash
                         executionTarget: {}
                         delegateSelectors:
-                          - harness-delegate
+                          - docker-delegate
                         source:
                           type: Inline
                           spec:
@@ -70,7 +70,7 @@ pipeline:
                         shell: Bash
                         executionTarget: {}
                         delegateSelectors:
-                          - harness-delegate
+                          - docker-delegate
                         source:
                           type: Inline
                           spec:
@@ -86,7 +86,7 @@ pipeline:
                         shell: Bash
                         executionTarget: {}
                         delegateSelectors:
-                          - harness-delegate
+                          - docker-delegate
                         source:
                           type: Inline
                           spec:
