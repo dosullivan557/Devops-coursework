@@ -197,6 +197,10 @@ pipeline:
                   timeout: 5m
                   when:
                     stageStatus: All
+        advanced:
+          sendGitStatus:
+            enabled: true
+            name: Build and Test
         tags: {}
     - stage:
         name: Containerise
