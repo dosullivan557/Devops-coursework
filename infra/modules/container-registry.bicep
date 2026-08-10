@@ -17,7 +17,8 @@ resource registry 'Microsoft.ContainerRegistry/registries@2025-11-01' = {
     name: 'Basic'
   }
   properties: {
-    adminUserEnabled: false
+    // Used by the local Harness delegate because the student tenant blocks app registrations.
+    adminUserEnabled: true
     anonymousPullEnabled: false
     dataEndpointEnabled: false
     publicNetworkAccess: 'Enabled'

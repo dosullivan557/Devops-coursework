@@ -5,8 +5,24 @@ This resource-group-scoped Bicep deployment creates:
 - A private Azure Container Registry using the low-cost `Basic` SKU.
 - A deterministic, globally unique registry name.
 
-The registry administrator account and anonymous pulls are disabled. Authenticate
-with Microsoft Entra ID through the Azure CLI or use a workload identity from CI.
+Anonymous pulls are disabled. Authenticate with Microsoft Entra ID through the
+Azure CLI where possible. For this student environment, the registry administrator
+account is enabled so the local Harness
+delegate can push images without permission to create an Entra application.
+
+After deploying the registry, retrieve its generated credentials without writing
+them to the repository:
+
+```bash
+az acr credential show \
+  --name changeauditm47b6whvnosgi \
+  --query '{username:username,password:passwords[0].value}'
+```
+
+Create account-level Harness text secrets named `acr_username` and `acr_password`
+from those values. The CI pipeline references them only in the main-only ACR push
+stage. Treat the administrator password as a privileged credential and rotate it
+if it is exposed.
 
 ## Prerequisites
 

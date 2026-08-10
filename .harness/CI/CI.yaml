@@ -10,6 +10,16 @@ pipeline:
       description: Build the application container after tests pass
       required: true
       value: <+input>
+    - name: push_to_acr
+      type: String
+      description: Push the successfully built container to Azure Container Registry
+      required: true
+      value: <+input>
+    - name: acr_login_server
+      type: String
+      description: Azure Container Registry login server
+      required: true
+      value: <+input>
   stages:
     - stage:
         name: Test
@@ -213,12 +223,15 @@ pipeline:
 
                           REPOSITORY_URL="https://github.com/dosullivan557/Devops-coursework.git"
                           SOURCE_BRANCH='<+trigger.branch>'
-                          IMAGE_TAG="change-audit:<+pipeline.sequenceId>"
+                          ACR_LOGIN_SERVER='<+pipeline.variables.acr_login_server>'
+                          VERSIONED_IMAGE="$ACR_LOGIN_SERVER/change-audit:<+pipeline.sequenceId>"
+                          LATEST_IMAGE="$ACR_LOGIN_SERVER/change-audit:latest"
                           BUILD_ROOT="$(mktemp -d /tmp/change-audit-container.XXXXXX)"
                           SOURCE_DIR="$BUILD_ROOT/source"
                           ASKPASS="$BUILD_ROOT/git-askpass.sh"
 
                           cleanup() {
+                            docker logout "$ACR_LOGIN_SERVER" >/dev/null 2>&1 || true
                             rm -rf "$BUILD_ROOT"
                           }
                           trap cleanup EXIT
@@ -236,7 +249,19 @@ pipeline:
                           GIT_ASKPASS="$ASKPASS" GIT_ASKPASS_REQUIRE=force GIT_TERMINAL_PROMPT=0 \
                             git clone --depth 1 --branch "$SOURCE_BRANCH" "$REPOSITORY_URL" "$SOURCE_DIR"
 
-                          docker build --file "$SOURCE_DIR/dockerfile" --tag "$IMAGE_TAG" "$SOURCE_DIR"
+                          printf '%s' '<+secrets.getValue("account.acr_password")>' \
+                            | docker login "$ACR_LOGIN_SERVER" \
+                              --username '<+secrets.getValue("account.acr_username")>' \
+                              --password-stdin
+
+                          docker build \
+                            --file "$SOURCE_DIR/dockerfile" \
+                            --tag "$VERSIONED_IMAGE" \
+                            --tag "$LATEST_IMAGE" \
+                            "$SOURCE_DIR"
+
+                          docker push "$VERSIONED_IMAGE"
+                          docker push "$LATEST_IMAGE"
                     environmentVariables:
                       - name: GITHUB_TOKEN
                         type: String
@@ -245,5 +270,5 @@ pipeline:
                   timeout: 20m
         when:
           pipelineStatus: Success
-          condition: <+pipeline.variables.containerise> == "true"
+          condition: <+pipeline.variables.containerise> == "true" && <+pipeline.variables.push_to_acr> == "true"
         tags: {}
