@@ -116,8 +116,9 @@ ACR_NAME="$(az deployment group show \
   --output tsv)"
 
 az acr login --name "$ACR_NAME"
-docker tag change-audit:local "$ACR_NAME.azurecr.io/change-audit:local"
-docker push "$ACR_NAME.azurecr.io/change-audit:local"
+IMAGE_VERSION="$(node -p "require('./package.json').version")"
+docker tag change-audit:local "$ACR_NAME.azurecr.io/change-audit:$IMAGE_VERSION"
+docker push "$ACR_NAME.azurecr.io/change-audit:$IMAGE_VERSION"
 ```
 
 Azure Container Registry and PostgreSQL are billable resources. Delete the
