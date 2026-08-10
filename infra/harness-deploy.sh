@@ -17,6 +17,8 @@ az login \
   --output none
 
 az account set --subscription "$AZURE_SUBSCRIPTION_ID"
+az bicep install --force
+az bicep version
 az bicep build --file "$TEMPLATE_FILE" --stdout >/dev/null
 
 case "$OPERATION" in

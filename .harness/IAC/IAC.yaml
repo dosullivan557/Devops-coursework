@@ -52,7 +52,7 @@ pipeline:
 
                           REPOSITORY_URL="https://github.com/dosullivan557/Devops-coursework.git"
                           SOURCE_BRANCH='<+pipeline.variables.source_branch>'
-                          AZURE_CLI_IMAGE="mcr.microsoft.com/azure-cli:2.77.0"
+                          AZURE_CLI_IMAGE="mcr.microsoft.com/azure-cli:2.88.0"
                           BUILD_ROOT="$(mktemp -d /tmp/change-audit-iac-plan.XXXXXX)"
                           SOURCE_DIR="$BUILD_ROOT/source"
                           ASKPASS="$BUILD_ROOT/git-askpass.sh"
@@ -129,7 +129,7 @@ pipeline:
 
                           REPOSITORY_URL="https://github.com/dosullivan557/Devops-coursework.git"
                           SOURCE_BRANCH='<+pipeline.variables.source_branch>'
-                          AZURE_CLI_IMAGE="mcr.microsoft.com/azure-cli:2.77.0"
+                          AZURE_CLI_IMAGE="mcr.microsoft.com/azure-cli:2.88.0"
                           BUILD_ROOT="$(mktemp -d /tmp/change-audit-iac-apply.XXXXXX)"
                           SOURCE_DIR="$BUILD_ROOT/source"
                           ASKPASS="$BUILD_ROOT/git-askpass.sh"
