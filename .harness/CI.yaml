@@ -4,72 +4,69 @@ pipeline:
   projectIdentifier: default_project
   orgIdentifier: default
   tags: {}
-  properties:
-    ci:
-      codebase:
-        connectorRef: Github
-        repoName: dosullivan557/Devops-coursework
-        build: <+input>
   stages:
     - stage:
         name: Test
         identifier: Test
-        description: Install, validate, and build the application
-        type: CI
+        description: Validate and build the pull request on the self-hosted delegate
+        type: Custom
         spec:
-          cloneCodebase: true
-          caching:
-            enabled: true
-          platform:
-            os: Linux
-            arch: Amd64
-          runtime:
-            type: Cloud
-            spec: {}
           execution:
             steps:
               - step:
-                  type: Run
-                  name: Install dependencies
-                  identifier: Install_dependencies
+                  type: ShellScript
+                  name: Build and test
+                  identifier: Build_and_test
                   spec:
-                    shell: Sh
-                    command: |-
-                      node --version
-                      npm --version
-                      npm ci
-                  timeout: 10m
-              - parallel:
-                  - step:
-                      type: Run
-                      name: Formatting
-                      identifier: Formatting
+                    shell: Bash
+                    executionTarget: {}
+                    delegateSelectors:
+                      - local-delegate
+                    source:
+                      type: Inline
                       spec:
-                        shell: Sh
-                        command: npm run format:verify
-                      timeout: 10m
-                  - step:
-                      type: Run
-                      name: Linting
-                      identifier: Linting
-                      spec:
-                        shell: Sh
-                        command: npm run lint
-                      timeout: 10m
-                  - step:
-                      type: Run
-                      name: TypeScript check
-                      identifier: TypeScript_check
-                      spec:
-                        shell: Sh
-                        command: npm run typecheck
-                      timeout: 10m
-                  - step:
-                      type: Run
-                      name: Production build
-                      identifier: Production_build
-                      spec:
-                        shell: Sh
-                        command: npm run build
-                      timeout: 15m
+                        script: |-
+                          set -eu
+
+                          NODE_VERSION="22.14.0"
+                          REPOSITORY_URL="https://github.com/dosullivan557/Devops-coursework.git"
+                          SOURCE_BRANCH='<+trigger.branch>'
+                          BUILD_ROOT="$(mktemp -d /tmp/change-audit.XXXXXX)"
+                          NODE_HOME="$BUILD_ROOT/node"
+                          SOURCE_DIR="$BUILD_ROOT/source"
+
+                          cleanup() {
+                            rm -rf "$BUILD_ROOT"
+                          }
+                          trap cleanup EXIT
+
+                          case "$(uname -m)" in
+                            x86_64) NODE_ARCH="x64" ;;
+                            arm64|aarch64) NODE_ARCH="arm64" ;;
+                            *) echo "Unsupported delegate architecture: $(uname -m)" >&2; exit 1 ;;
+                          esac
+
+                          command -v curl >/dev/null 2>&1 || { echo "curl is required on the delegate" >&2; exit 1; }
+                          command -v git >/dev/null 2>&1 || { echo "git is required on the delegate" >&2; exit 1; }
+
+                          mkdir -p "$NODE_HOME"
+                          curl --fail --location --silent --show-error \
+                            "https://nodejs.org/dist/v${NODE_VERSION}/node-v${NODE_VERSION}-linux-${NODE_ARCH}.tar.gz" \
+                            | tar -xz --strip-components=1 -C "$NODE_HOME"
+                          export PATH="$NODE_HOME/bin:$PATH"
+
+                          node --version
+                          npm --version
+
+                          git clone --depth 1 --branch "$SOURCE_BRANCH" "$REPOSITORY_URL" "$SOURCE_DIR"
+                          cd "$SOURCE_DIR"
+
+                          npm ci
+                          npm run format:verify
+                          npm run lint
+                          npm run typecheck
+                          npm run build
+                    environmentVariables: []
+                    outputVariables: []
+                  timeout: 20m
         tags: {}
