@@ -228,7 +228,6 @@ pipeline:
                           REPOSITORY_URL="https://github.com/dosullivan557/Devops-coursework.git"
                           SOURCE_BRANCH='<+trigger.branch>'
                           ACR_LOGIN_SERVER='<+pipeline.variables.acr_login_server>'
-                          LATEST_IMAGE="$ACR_LOGIN_SERVER/change-audit:latest"
                           BUILD_ROOT="$(mktemp -d /tmp/change-audit-container.XXXXXX)"
                           SOURCE_DIR="$BUILD_ROOT/source"
                           ASKPASS="$BUILD_ROOT/git-askpass.sh"
@@ -257,7 +256,8 @@ pipeline:
                             echo "Could not read version from package.json" >&2
                             exit 1
                           fi
-                          VERSIONED_IMAGE="$ACR_LOGIN_SERVER/change-audit:$IMAGE_VERSION"
+                          IMAGE="$ACR_LOGIN_SERVER/change-audit:$IMAGE_VERSION"
+                          echo "Building and pushing $IMAGE"
 
                           printf '%s' '<+secrets.getValue("account.acr_password")>' \
                             | docker login "$ACR_LOGIN_SERVER" \
@@ -266,12 +266,10 @@ pipeline:
 
                           docker build \
                             --file "$SOURCE_DIR/dockerfile" \
-                            --tag "$VERSIONED_IMAGE" \
-                            --tag "$LATEST_IMAGE" \
+                            --tag "$IMAGE" \
                             "$SOURCE_DIR"
 
-                          docker push "$VERSIONED_IMAGE"
-                          docker push "$LATEST_IMAGE"
+                          docker push "$IMAGE"
                     environmentVariables:
                       - name: GITHUB_TOKEN
                         type: String
