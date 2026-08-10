@@ -88,8 +88,8 @@ pipeline:
                           CONTAINER_ID="$(docker create \
                             --env 'AZURE_TENANT_ID=<+pipeline.variables.azure_tenant_id>' \
                             --env 'AZURE_SUBSCRIPTION_ID=<+pipeline.variables.azure_subscription_id>' \
-                            --env AZURE_RESOURCE_GROUP \
-                            --env AZURE_RESOURCE_LOCATION \
+                            --env 'AZURE_RESOURCE_GROUP=<+pipeline.variables.azure_resource_group>' \
+                            --env 'AZURE_RESOURCE_LOCATION=<+pipeline.variables.azure_resource_location>' \
                             --workdir /workspace \
                             "$AZURE_CLI_IMAGE" \
                             sh /workspace/infra/harness-deploy.sh plan)"
@@ -99,12 +99,6 @@ pipeline:
                       - name: GITHUB_TOKEN
                         type: Secret
                         value: github_pat
-                      - name: AZURE_RESOURCE_GROUP
-                        type: String
-                        value: <+pipeline.variables.azure_resource_group>
-                      - name: AZURE_RESOURCE_LOCATION
-                        type: String
-                        value: <+pipeline.variables.azure_resource_location>
                     outputVariables: []
                   timeout: 20m
               - step:
@@ -169,8 +163,8 @@ pipeline:
                           CONTAINER_ID="$(docker create \
                             --env 'AZURE_TENANT_ID=<+pipeline.variables.azure_tenant_id>' \
                             --env 'AZURE_SUBSCRIPTION_ID=<+pipeline.variables.azure_subscription_id>' \
-                            --env AZURE_RESOURCE_GROUP \
-                            --env AZURE_RESOURCE_LOCATION \
+                            --env 'AZURE_RESOURCE_GROUP=<+pipeline.variables.azure_resource_group>' \
+                            --env 'AZURE_RESOURCE_LOCATION=<+pipeline.variables.azure_resource_location>' \
                             --workdir /workspace \
                             "$AZURE_CLI_IMAGE" \
                             sh /workspace/infra/harness-deploy.sh apply)"
@@ -180,12 +174,6 @@ pipeline:
                       - name: GITHUB_TOKEN
                         type: Secret
                         value: github_pat
-                      - name: AZURE_RESOURCE_GROUP
-                        type: String
-                        value: <+pipeline.variables.azure_resource_group>
-                      - name: AZURE_RESOURCE_LOCATION
-                        type: String
-                        value: <+pipeline.variables.azure_resource_location>
                     outputVariables: []
                   timeout: 30m
         tags: {}
