@@ -71,8 +71,8 @@ pipeline:
 
                           docker pull "$AZURE_CLI_IMAGE"
                           CONTAINER_ID="$(docker create \
-                            --env AZURE_TENANT_ID \
-                            --env AZURE_SUBSCRIPTION_ID \
+                            --env 'AZURE_TENANT_ID=<+secrets.getValue("account.azure_tenant_id")>' \
+                            --env 'AZURE_SUBSCRIPTION_ID=<+secrets.getValue("account.azure_subscription_id")>' \
                             --env AZURE_RESOURCE_GROUP \
                             --workdir /workspace \
                             "$AZURE_CLI_IMAGE" \
@@ -83,12 +83,6 @@ pipeline:
                       - name: GITHUB_TOKEN
                         type: Secret
                         value: github_pat
-                      - name: AZURE_TENANT_ID
-                        type: Secret
-                        value: account.azure_tenant_id
-                      - name: AZURE_SUBSCRIPTION_ID
-                        type: Secret
-                        value: account.azure_subscription_id
                       - name: AZURE_RESOURCE_GROUP
                         type: String
                         value: <+pipeline.variables.azure_resource_group>
@@ -154,8 +148,8 @@ pipeline:
 
                           docker pull "$AZURE_CLI_IMAGE"
                           CONTAINER_ID="$(docker create \
-                            --env AZURE_TENANT_ID \
-                            --env AZURE_SUBSCRIPTION_ID \
+                            --env 'AZURE_TENANT_ID=<+secrets.getValue("account.azure_tenant_id")>' \
+                            --env 'AZURE_SUBSCRIPTION_ID=<+secrets.getValue("account.azure_subscription_id")>' \
                             --env AZURE_RESOURCE_GROUP \
                             --workdir /workspace \
                             "$AZURE_CLI_IMAGE" \
@@ -166,12 +160,6 @@ pipeline:
                       - name: GITHUB_TOKEN
                         type: Secret
                         value: github_pat
-                      - name: AZURE_TENANT_ID
-                        type: Secret
-                        value: account.azure_tenant_id
-                      - name: AZURE_SUBSCRIPTION_ID
-                        type: Secret
-                        value: account.azure_subscription_id
                       - name: AZURE_RESOURCE_GROUP
                         type: String
                         value: <+pipeline.variables.azure_resource_group>
