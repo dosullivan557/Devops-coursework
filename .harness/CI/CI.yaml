@@ -228,7 +228,6 @@ pipeline:
                           REPOSITORY_URL="https://github.com/dosullivan557/Devops-coursework.git"
                           SOURCE_BRANCH='<+trigger.branch>'
                           ACR_LOGIN_SERVER='<+pipeline.variables.acr_login_server>'
-                          VERSIONED_IMAGE="$ACR_LOGIN_SERVER/change-audit:<+pipeline.sequenceId>"
                           LATEST_IMAGE="$ACR_LOGIN_SERVER/change-audit:latest"
                           BUILD_ROOT="$(mktemp -d /tmp/change-audit-container.XXXXXX)"
                           SOURCE_DIR="$BUILD_ROOT/source"
@@ -252,6 +251,13 @@ pipeline:
 
                           GIT_ASKPASS="$ASKPASS" GIT_ASKPASS_REQUIRE=force GIT_TERMINAL_PROMPT=0 \
                             git clone --depth 1 --branch "$SOURCE_BRANCH" "$REPOSITORY_URL" "$SOURCE_DIR"
+
+                          IMAGE_VERSION="$(sed -n 's/^[[:space:]]*"version"[[:space:]]*:[[:space:]]*"\([^"]*\)".*/\1/p' "$SOURCE_DIR/package.json" | head -n 1)"
+                          if [ -z "$IMAGE_VERSION" ]; then
+                            echo "Could not read version from package.json" >&2
+                            exit 1
+                          fi
+                          VERSIONED_IMAGE="$ACR_LOGIN_SERVER/change-audit:$IMAGE_VERSION"
 
                           printf '%s' '<+secrets.getValue("account.acr_password")>' \
                             | docker login "$ACR_LOGIN_SERVER" \

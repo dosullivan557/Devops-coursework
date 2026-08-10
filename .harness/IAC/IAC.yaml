@@ -90,6 +90,7 @@ pipeline:
                             --env 'AZURE_SUBSCRIPTION_ID=<+pipeline.variables.azure_subscription_id>' \
                             --env 'AZURE_RESOURCE_GROUP=<+pipeline.variables.azure_resource_group>' \
                             --env 'AZURE_RESOURCE_LOCATION=<+pipeline.variables.azure_resource_location>' \
+                            --env 'DATABASE_ADMIN_PASSWORD=<+secrets.getValue("account.database_admin_password")>' \
                             --workdir /workspace \
                             "$AZURE_CLI_IMAGE" \
                             sh /workspace/infra/harness-deploy.sh plan)"
@@ -165,6 +166,7 @@ pipeline:
                             --env 'AZURE_SUBSCRIPTION_ID=<+pipeline.variables.azure_subscription_id>' \
                             --env 'AZURE_RESOURCE_GROUP=<+pipeline.variables.azure_resource_group>' \
                             --env 'AZURE_RESOURCE_LOCATION=<+pipeline.variables.azure_resource_location>' \
+                            --env 'DATABASE_ADMIN_PASSWORD=<+secrets.getValue("account.database_admin_password")>' \
                             --workdir /workspace \
                             "$AZURE_CLI_IMAGE" \
                             sh /workspace/infra/harness-deploy.sh apply)"

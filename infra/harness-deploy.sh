@@ -10,6 +10,7 @@ DEPLOYMENT_NAME="change-audit-infrastructure"
 : "${AZURE_SUBSCRIPTION_ID:?AZURE_SUBSCRIPTION_ID is required}"
 : "${AZURE_RESOURCE_GROUP:?AZURE_RESOURCE_GROUP is required}"
 : "${AZURE_RESOURCE_LOCATION:?AZURE_RESOURCE_LOCATION is required}"
+: "${DATABASE_ADMIN_PASSWORD:?DATABASE_ADMIN_PASSWORD is required}"
 
 az login \
   --use-device-code \
@@ -28,13 +29,15 @@ case "$OPERATION" in
       --resource-group "$AZURE_RESOURCE_GROUP" \
       --template-file "$TEMPLATE_FILE" \
       --parameters location="$AZURE_RESOURCE_LOCATION" \
+      --parameters databaseAdministratorPassword="$DATABASE_ADMIN_PASSWORD" \
       --output table
 
     az deployment group what-if \
       --name "$DEPLOYMENT_NAME" \
       --resource-group "$AZURE_RESOURCE_GROUP" \
       --template-file "$TEMPLATE_FILE" \
-      --parameters location="$AZURE_RESOURCE_LOCATION"
+      --parameters location="$AZURE_RESOURCE_LOCATION" \
+      --parameters databaseAdministratorPassword="$DATABASE_ADMIN_PASSWORD"
     ;;
   apply)
     az deployment group create \
@@ -42,6 +45,7 @@ case "$OPERATION" in
       --resource-group "$AZURE_RESOURCE_GROUP" \
       --template-file "$TEMPLATE_FILE" \
       --parameters location="$AZURE_RESOURCE_LOCATION" \
+      --parameters databaseAdministratorPassword="$DATABASE_ADMIN_PASSWORD" \
       --query properties.outputs \
       --output json
     ;;

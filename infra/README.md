@@ -1,9 +1,13 @@
-# Azure Container Registry infrastructure
+# Azure application infrastructure
 
 This resource-group-scoped Bicep deployment creates:
 
 - A private Azure Container Registry using the low-cost `Basic` SKU.
 - A deterministic, globally unique registry name.
+- An Azure Database for PostgreSQL Flexible Server using the low-cost burstable
+  `Standard_B1ms` SKU.
+- A `change_audit` PostgreSQL database with connections from Azure services
+  allowed through the server firewall.
 
 Anonymous pulls are disabled. Authenticate with Microsoft Entra ID through the
 Azure CLI where possible. For this student environment, the registry administrator
@@ -23,6 +27,13 @@ Create account-level Harness text secrets named `acr_username` and `acr_password
 from those values. The CI pipeline references them only in the main-only ACR push
 stage. Treat the administrator password as a privileged credential and rotate it
 if it is exposed.
+
+Create another Harness text secret named `database_admin_password`. The IaC
+pipeline passes it securely to both the plan and apply containers. Use the same
+secret for every deployment so Azure does not rotate the database administrator
+password unexpectedly. The value must be 8-128 characters and contain characters
+from at least three of these groups: uppercase, lowercase, numbers, and
+punctuation.
 
 ## Prerequisites
 
@@ -45,6 +56,15 @@ Azure for Students subscription policy.
 
 ## Validate and preview
 
+Set the database administrator password in your shell. It must be 8-128
+characters and contain characters from at least three of these groups: uppercase,
+lowercase, numbers, and punctuation.
+
+```bash
+read -s DATABASE_ADMIN_PASSWORD
+export DATABASE_ADMIN_PASSWORD
+```
+
 Run these commands from the repository root:
 
 ```bash
@@ -53,7 +73,8 @@ az bicep build --file infra/main.bicep
 az deployment group what-if \
   --name change-audit-infrastructure-preview \
   --resource-group rg-change-audit-dev \
-  --parameters infra/main.dev.bicepparam
+  --parameters infra/main.dev.bicepparam \
+  --parameters databaseAdministratorPassword="$DATABASE_ADMIN_PASSWORD"
 ```
 
 ## Deploy
@@ -68,7 +89,8 @@ requests its own login.
 az deployment group create \
   --name change-audit-infrastructure \
   --resource-group rg-change-audit-dev \
-  --parameters infra/main.dev.bicepparam
+  --parameters infra/main.dev.bicepparam \
+  --parameters databaseAdministratorPassword="$DATABASE_ADMIN_PASSWORD"
 ```
 
 Read the generated registry name and login server from the deployment outputs:
@@ -81,6 +103,16 @@ az deployment group show \
   --output table
 ```
 
+Build the application's `DATABASE_URL` from the output values without committing
+the password:
+
+```text
+postgresql://changeauditadmin:PASSWORD@DATABASE_HOST:5432/change_audit?sslmode=require
+```
+
+The deployment creates the database itself, but it does not apply the application
+schema. Run `init.sql` against the new database before starting the application.
+
 ## Push an image manually
 
 ```bash
@@ -91,12 +123,13 @@ ACR_NAME="$(az deployment group show \
   --output tsv)"
 
 az acr login --name "$ACR_NAME"
-docker tag change-audit:local "$ACR_NAME.azurecr.io/change-audit:local"
-docker push "$ACR_NAME.azurecr.io/change-audit:local"
+IMAGE_VERSION="$(node -p "require('./package.json').version")"
+docker tag change-audit:local "$ACR_NAME.azurecr.io/change-audit:$IMAGE_VERSION"
+docker push "$ACR_NAME.azurecr.io/change-audit:$IMAGE_VERSION"
 ```
 
-Azure Container Registry is a billable resource. Delete the development resource
-group when it is no longer needed:
+Azure Container Registry and PostgreSQL are billable resources. Delete the
+development resource group when it is no longer needed:
 
 ```bash
 az group delete --name rg-change-audit-dev
