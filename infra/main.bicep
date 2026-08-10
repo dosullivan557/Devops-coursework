@@ -1,7 +1,7 @@
 targetScope = 'resourceGroup'
 
 @description('Azure region used for the resource group and container registry.')
-param location string = 'uksouth'
+param location string = 'swedencentral'
 
 @description('Lowercase alphanumeric prefix for the registry name. A deterministic suffix is added for global uniqueness.')
 @minLength(5)

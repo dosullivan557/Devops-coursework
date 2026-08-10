@@ -20,7 +20,7 @@ pipeline:
       type: String
       description: Azure Policy-approved region for the container registry
       required: true
-      value: <+input>
+      value: swedencentral
     - name: azure_tenant_id
       type: String
       description: Microsoft Entra tenant containing the Azure for Students subscription

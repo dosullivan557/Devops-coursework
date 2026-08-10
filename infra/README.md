@@ -24,8 +24,8 @@ az account set --subscription "SUBSCRIPTION_NAME_OR_ID"
 az account show --output table
 ```
 
-If `UK South` is unavailable under your subscription policy, change `location` in
-`main.dev.bicepparam` to an allowed region.
+The development configuration uses `Sweden Central`, which is permitted by the
+Azure for Students subscription policy.
 
 ## Validate and preview
 

@@ -1,5 +1,5 @@
 using './main.bicep'
 
-param location = 'uksouth'
+param location = 'swedencentral'
 param registryPrefix = 'changeaudit'
 param environment = 'dev'
