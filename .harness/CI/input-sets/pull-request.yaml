@@ -16,3 +16,15 @@ inputSet:
       - name: acr_login_server
         type: String
         value: changeauditm47b6whvnosgi.azurecr.io
+      - name: azure_resource_group
+        type: String
+        value: rg-change-audit-dev
+      - name: azure_container_app_name
+        type: String
+        value: change-audit
+      - name: azure_tenant_id
+        type: String
+        value: 5d2d9e33-bd77-46e1-b1e6-721c91c9373e
+      - name: azure_subscription_id
+        type: String
+        value: d1237ef8-85ef-4c72-be67-a25cc386891e
