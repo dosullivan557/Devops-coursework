@@ -4,60 +4,81 @@ pipeline:
   projectIdentifier: default_project
   orgIdentifier: default
   tags: {}
-  properties:
-    ci:
-      codebase:
-        connectorRef: Github
-        repoName: dosullivan557/Devops-coursework
-        build: <+input>
   stages:
     - stage:
         name: Test
         identifier: Test
-        description: Validate and build using the local Docker runner
-        type: CI
+        description: Validate and build the pull request on the local delegate
+        type: Custom
         spec:
-          cloneCodebase: true
-          caching:
-            enabled: true
-          platform:
-            os: MacOS
-            arch: Arm64
-          runtime:
-            type: Docker
-            spec: {}
           execution:
             steps:
               - step:
-                  type: Run
-                  name: Install dependencies
-                  identifier: Install_dependencies
+                  type: ShellScript
+                  name: Build and test
+                  identifier: Build_and_test
                   spec:
-                    connectorRef: account.harnessImage
-                    image: node:22.14.0-slim
-                    shell: Sh
-                    command: npm ci
-                    resources:
-                      limits:
-                        memory: 2Gi
-                        cpu: "1"
-                  timeout: 10m
-              - step:
-                  type: Run
-                  name: Validate and build
-                  identifier: Validate_and_build
-                  spec:
-                    connectorRef: account.harnessImage
-                    image: node:22.14.0-slim
-                    shell: Sh
-                    command: |-
-                      npm run format:verify
-                      npm run lint
-                      npm run typecheck
-                      npm run build
-                    resources:
-                      limits:
-                        memory: 2Gi
-                        cpu: "1"
+                    shell: Bash
+                    executionTarget: {}
+                    delegateSelectors:
+                      - local-delegate
+                    source:
+                      type: Inline
+                      spec:
+                        script: |-
+                          set -eu
+
+                          NODE_VERSION="22.14.0"
+                          REPOSITORY_URL="https://github.com/dosullivan557/Devops-coursework.git"
+                          SOURCE_BRANCH='<+trigger.branch>'
+                          BUILD_ROOT="$(mktemp -d /tmp/change-audit.XXXXXX)"
+                          NODE_HOME="$BUILD_ROOT/node"
+                          SOURCE_DIR="$BUILD_ROOT/source"
+                          ASKPASS="$BUILD_ROOT/git-askpass.sh"
+
+                          cleanup() {
+                            rm -rf "$BUILD_ROOT"
+                          }
+                          trap cleanup EXIT
+
+                          case "$(uname -m)" in
+                            x86_64) NODE_ARCH="x64" ;;
+                            arm64|aarch64) NODE_ARCH="arm64" ;;
+                            *) echo "Unsupported delegate architecture: $(uname -m)" >&2; exit 1 ;;
+                          esac
+
+                          command -v curl >/dev/null 2>&1 || { echo "curl is required on the delegate" >&2; exit 1; }
+                          command -v git >/dev/null 2>&1 || { echo "git is required on the delegate" >&2; exit 1; }
+
+                          mkdir -p "$NODE_HOME"
+                          curl --fail --location --silent --show-error \
+                            "https://nodejs.org/dist/v${NODE_VERSION}/node-v${NODE_VERSION}-linux-${NODE_ARCH}.tar.gz" \
+                            | tar -xz --strip-components=1 -C "$NODE_HOME"
+                          export PATH="$NODE_HOME/bin:$PATH"
+
+                          node --version
+                          npm --version
+
+                          printf '%s\n' '#!/bin/sh' \
+                            'case "$1" in' \
+                            '  *Username*) printf "%s\\n" "x-access-token" ;;' \
+                            '  *Password*) printf "%s\\n" "$GITHUB_TOKEN" ;;' \
+                            'esac' > "$ASKPASS"
+                          chmod 700 "$ASKPASS"
+
+                          GIT_ASKPASS="$ASKPASS" GIT_ASKPASS_REQUIRE=force GIT_TERMINAL_PROMPT=0 \
+                            git clone --depth 1 --branch "$SOURCE_BRANCH" "$REPOSITORY_URL" "$SOURCE_DIR"
+                          cd "$SOURCE_DIR"
+
+                          npm ci
+                          npm run format:verify
+                          npm run lint
+                          npm run typecheck
+                          npm run build
+                    environmentVariables:
+                      - name: GITHUB_TOKEN
+                        type: String
+                        value: <+secrets.getValue("github_pat")>
+                    outputVariables: []
                   timeout: 20m
         tags: {}
