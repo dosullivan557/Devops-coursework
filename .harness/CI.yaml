@@ -21,8 +21,8 @@ pipeline:
             steps:
               - step:
                   type: ShellScript
-                  name: Build and test
-                  identifier: Build_and_test
+                  name: Prepare test workspace
+                  identifier: Prepare_test_workspace
                   spec:
                     shell: Bash
                     executionTarget: {}
@@ -37,15 +37,10 @@ pipeline:
                           NODE_VERSION="22.14.0"
                           REPOSITORY_URL="https://github.com/dosullivan557/Devops-coursework.git"
                           SOURCE_BRANCH='<+trigger.branch>'
-                          BUILD_ROOT="$(mktemp -d /tmp/change-audit.XXXXXX)"
+                          BUILD_ROOT="/tmp/change-audit-<+pipeline.executionId>"
                           NODE_HOME="$BUILD_ROOT/node"
                           SOURCE_DIR="$BUILD_ROOT/source"
                           ASKPASS="$BUILD_ROOT/git-askpass.sh"
-
-                          cleanup() {
-                            rm -rf "$BUILD_ROOT"
-                          }
-                          trap cleanup EXIT
 
                           case "$(uname -m)" in
                             x86_64) NODE_ARCH="x64" ;;
@@ -73,20 +68,125 @@ pipeline:
                           chmod 700 "$ASKPASS"
 
                           GIT_ASKPASS="$ASKPASS" GIT_ASKPASS_REQUIRE=force GIT_TERMINAL_PROMPT=0 \
-                            git clone --depth 1 --branch "$SOURCE_BRANCH" "$REPOSITORY_URL" "$SOURCE_DIR"
+                          git clone --depth 1 --branch "$SOURCE_BRANCH" "$REPOSITORY_URL" "$SOURCE_DIR"
                           cd "$SOURCE_DIR"
 
                           npm ci
-                          npm run format:verify
-                          npm run lint
-                          npm run typecheck
-                          npm run build
                     environmentVariables:
                       - name: GITHUB_TOKEN
                         type: String
                         value: <+secrets.getValue("github_pat")>
                     outputVariables: []
                   timeout: 20m
+              - parallel:
+                  - step:
+                      type: ShellScript
+                      name: Verify formatting
+                      identifier: Verify_formatting
+                      spec:
+                        shell: Bash
+                        executionTarget: {}
+                        delegateSelectors:
+                          - local-delegate
+                        source:
+                          type: Inline
+                          spec:
+                            script: |-
+                              set -eu
+                              BUILD_ROOT="/tmp/change-audit-<+pipeline.executionId>"
+                              export PATH="$BUILD_ROOT/node/bin:$PATH"
+                              cd "$BUILD_ROOT/source"
+                              npm run format:verify
+                        environmentVariables: []
+                        outputVariables: []
+                      timeout: 10m
+                  - step:
+                      type: ShellScript
+                      name: Lint
+                      identifier: Lint
+                      spec:
+                        shell: Bash
+                        executionTarget: {}
+                        delegateSelectors:
+                          - local-delegate
+                        source:
+                          type: Inline
+                          spec:
+                            script: |-
+                              set -eu
+                              BUILD_ROOT="/tmp/change-audit-<+pipeline.executionId>"
+                              export PATH="$BUILD_ROOT/node/bin:$PATH"
+                              cd "$BUILD_ROOT/source"
+                              npm run lint
+                        environmentVariables: []
+                        outputVariables: []
+                      timeout: 10m
+                  - step:
+                      type: ShellScript
+                      name: Typecheck
+                      identifier: Typecheck
+                      spec:
+                        shell: Bash
+                        executionTarget: {}
+                        delegateSelectors:
+                          - local-delegate
+                        source:
+                          type: Inline
+                          spec:
+                            script: |-
+                              set -eu
+                              BUILD_ROOT="/tmp/change-audit-<+pipeline.executionId>"
+                              export PATH="$BUILD_ROOT/node/bin:$PATH"
+                              cd "$BUILD_ROOT/source"
+                              npm run typecheck
+                        environmentVariables: []
+                        outputVariables: []
+                      timeout: 10m
+              - step:
+                  type: ShellScript
+                  name: Build application
+                  identifier: Build_application
+                  spec:
+                    shell: Bash
+                    executionTarget: {}
+                    delegateSelectors:
+                      - local-delegate
+                    source:
+                      type: Inline
+                      spec:
+                        script: |-
+                          set -eu
+                          BUILD_ROOT="/tmp/change-audit-<+pipeline.executionId>"
+                          export PATH="$BUILD_ROOT/node/bin:$PATH"
+                          cd "$BUILD_ROOT/source"
+                          npm run build
+                    environmentVariables: []
+                    outputVariables: []
+                  timeout: 15m
+              - step:
+                  type: ShellScript
+                  name: Clean test workspace
+                  identifier: Clean_test_workspace
+                  spec:
+                    shell: Bash
+                    executionTarget: {}
+                    delegateSelectors:
+                      - local-delegate
+                    source:
+                      type: Inline
+                      spec:
+                        script: |-
+                          set -eu
+                          BUILD_ROOT="/tmp/change-audit-<+pipeline.executionId>"
+                          case "$BUILD_ROOT" in
+                            /tmp/change-audit-*) rm -rf -- "$BUILD_ROOT" ;;
+                            *) echo "Refusing to remove unexpected path: $BUILD_ROOT" >&2; exit 1 ;;
+                          esac
+                    environmentVariables: []
+                    outputVariables: []
+                  timeout: 5m
+                  when:
+                    stageStatus: All
         tags: {}
     - stage:
         name: Containerise
