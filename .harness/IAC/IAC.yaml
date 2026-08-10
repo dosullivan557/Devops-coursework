@@ -90,6 +90,7 @@ pipeline:
                             --env 'AZURE_SUBSCRIPTION_ID=<+pipeline.variables.azure_subscription_id>' \
                             --env 'AZURE_RESOURCE_GROUP=<+pipeline.variables.azure_resource_group>' \
                             --env 'AZURE_RESOURCE_LOCATION=<+pipeline.variables.azure_resource_location>' \
+                            --env DATABASE_ADMIN_PASSWORD \
                             --workdir /workspace \
                             "$AZURE_CLI_IMAGE" \
                             sh /workspace/infra/harness-deploy.sh plan)"
@@ -99,6 +100,9 @@ pipeline:
                       - name: GITHUB_TOKEN
                         type: Secret
                         value: github_pat
+                      - name: DATABASE_ADMIN_PASSWORD
+                        type: Secret
+                        value: database_admin_password
                     outputVariables: []
                   timeout: 20m
               - step:
@@ -165,6 +169,7 @@ pipeline:
                             --env 'AZURE_SUBSCRIPTION_ID=<+pipeline.variables.azure_subscription_id>' \
                             --env 'AZURE_RESOURCE_GROUP=<+pipeline.variables.azure_resource_group>' \
                             --env 'AZURE_RESOURCE_LOCATION=<+pipeline.variables.azure_resource_location>' \
+                            --env DATABASE_ADMIN_PASSWORD \
                             --workdir /workspace \
                             "$AZURE_CLI_IMAGE" \
                             sh /workspace/infra/harness-deploy.sh apply)"
@@ -174,6 +179,9 @@ pipeline:
                       - name: GITHUB_TOKEN
                         type: Secret
                         value: github_pat
+                      - name: DATABASE_ADMIN_PASSWORD
+                        type: Secret
+                        value: database_admin_password
                     outputVariables: []
                   timeout: 30m
         tags: {}

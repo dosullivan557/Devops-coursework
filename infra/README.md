@@ -28,6 +28,13 @@ from those values. The CI pipeline references them only in the main-only ACR pus
 stage. Treat the administrator password as a privileged credential and rotate it
 if it is exposed.
 
+Create another Harness text secret named `database_admin_password`. The IaC
+pipeline passes it securely to both the plan and apply containers. Use the same
+secret for every deployment so Azure does not rotate the database administrator
+password unexpectedly. The value must be 8-128 characters and contain characters
+from at least three of these groups: uppercase, lowercase, numbers, and
+punctuation.
+
 ## Prerequisites
 
 - An active Azure subscription, including Azure for Students.
