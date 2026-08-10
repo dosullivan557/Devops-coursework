@@ -85,10 +85,10 @@ pipeline:
                         value: github_pat
                       - name: AZURE_TENANT_ID
                         type: Secret
-                        value: azure_tenant_id
+                        value: account.azure_tenant_id
                       - name: AZURE_SUBSCRIPTION_ID
                         type: Secret
-                        value: azure_subscription_id
+                        value: account.azure_subscription_id
                       - name: AZURE_RESOURCE_GROUP
                         type: String
                         value: <+pipeline.variables.azure_resource_group>
@@ -168,10 +168,10 @@ pipeline:
                         value: github_pat
                       - name: AZURE_TENANT_ID
                         type: Secret
-                        value: azure_tenant_id
+                        value: account.azure_tenant_id
                       - name: AZURE_SUBSCRIPTION_ID
                         type: Secret
-                        value: azure_subscription_id
+                        value: account.azure_subscription_id
                       - name: AZURE_RESOURCE_GROUP
                         type: String
                         value: <+pipeline.variables.azure_resource_group>
