@@ -16,7 +16,18 @@ param registryPrefix string = 'changeaudit'
 ])
 param environment string = 'dev'
 
+@description('PostgreSQL administrator username.')
+param databaseAdministratorLogin string = 'changeauditadmin'
+
+@secure()
+@description('PostgreSQL administrator password. Supply this at deployment time; never commit it.')
+param databaseAdministratorPassword string
+
+@description('PostgreSQL database used by the application.')
+param databaseName string = 'change_audit'
+
 var registryName = '${toLower(registryPrefix)}${uniqueString(resourceGroup().id)}'
+var databaseServerName = '${toLower(registryPrefix)}-db-${uniqueString(resourceGroup().id)}'
 var tags = {
   application: 'change-audit'
   environment: environment
@@ -32,7 +43,23 @@ module containerRegistry './modules/container-registry.bicep' = {
   }
 }
 
+module postgresql './modules/postgresql.bicep' = {
+  name: 'postgresql'
+  params: {
+    location: location
+    serverName: databaseServerName
+    administratorLogin: databaseAdministratorLogin
+    administratorPassword: databaseAdministratorPassword
+    databaseName: databaseName
+    tags: tags
+  }
+}
+
 output resourceGroupName string = resourceGroup().name
 output registryId string = containerRegistry.outputs.registryId
 output registryName string = containerRegistry.outputs.registryName
 output registryLoginServer string = containerRegistry.outputs.loginServer
+output databaseServerId string = postgresql.outputs.serverId
+output databaseHost string = postgresql.outputs.fullyQualifiedDomainName
+output databaseName string = postgresql.outputs.databaseName
+output databaseAdministratorLogin string = databaseAdministratorLogin
