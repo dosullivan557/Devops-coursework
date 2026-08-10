@@ -18,7 +18,7 @@ trigger:
         type: PullRequest
         spec:
           connectorRef: Github
-          autoAbortPreviousExecutions: false
+          autoAbortPreviousExecutions: true
           payloadConditions:
             - key: targetBranch
               operator: Equals
