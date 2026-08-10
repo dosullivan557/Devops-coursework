@@ -9,7 +9,7 @@ pipeline:
       type: String
       description: Build the application container after tests pass
       required: true
-      value: <+input>.allowedValues("true", "false")
+      value: <+input>.allowedValues(true, false)
   stages:
     - stage:
         name: Test
