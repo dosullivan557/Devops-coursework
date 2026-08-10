@@ -1,4 +1,5 @@
 # CI
+
 ```mermaid
 flowchart LR
     A[Developer Pushes Code] --> B[Git Repository]
