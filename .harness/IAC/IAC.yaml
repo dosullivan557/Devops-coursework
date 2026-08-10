@@ -11,11 +11,11 @@ pipeline:
       description: Git branch containing the Bicep configuration to deploy
       required: true
       value: <+input>.default(main)
-    - name: azure_location
+    - name: azure_resource_group
       type: String
-      description: Azure deployment metadata location
+      description: Existing Azure resource group that receives the infrastructure
       required: true
-      value: uksouth
+      value: rg-change-audit-dev
   stages:
     - stage:
         name: Plan and deploy
@@ -71,11 +71,9 @@ pipeline:
 
                           docker pull "$AZURE_CLI_IMAGE"
                           CONTAINER_ID="$(docker create \
-                            --env AZURE_CLIENT_ID \
-                            --env AZURE_CLIENT_SECRET \
                             --env AZURE_TENANT_ID \
                             --env AZURE_SUBSCRIPTION_ID \
-                            --env AZURE_LOCATION \
+                            --env AZURE_RESOURCE_GROUP \
                             --workdir /workspace \
                             "$AZURE_CLI_IMAGE" \
                             sh /workspace/infra/harness-deploy.sh plan)"
@@ -85,21 +83,15 @@ pipeline:
                       - name: GITHUB_TOKEN
                         type: Secret
                         value: github_pat
-                      - name: AZURE_CLIENT_ID
-                        type: Secret
-                        value: azure_client_id
-                      - name: AZURE_CLIENT_SECRET
-                        type: Secret
-                        value: azure_client_secret
                       - name: AZURE_TENANT_ID
                         type: Secret
                         value: azure_tenant_id
                       - name: AZURE_SUBSCRIPTION_ID
                         type: Secret
                         value: azure_subscription_id
-                      - name: AZURE_LOCATION
+                      - name: AZURE_RESOURCE_GROUP
                         type: String
-                        value: <+pipeline.variables.azure_location>
+                        value: <+pipeline.variables.azure_resource_group>
                     outputVariables: []
                   timeout: 20m
               - step:
@@ -162,11 +154,9 @@ pipeline:
 
                           docker pull "$AZURE_CLI_IMAGE"
                           CONTAINER_ID="$(docker create \
-                            --env AZURE_CLIENT_ID \
-                            --env AZURE_CLIENT_SECRET \
                             --env AZURE_TENANT_ID \
                             --env AZURE_SUBSCRIPTION_ID \
-                            --env AZURE_LOCATION \
+                            --env AZURE_RESOURCE_GROUP \
                             --workdir /workspace \
                             "$AZURE_CLI_IMAGE" \
                             sh /workspace/infra/harness-deploy.sh apply)"
@@ -176,21 +166,15 @@ pipeline:
                       - name: GITHUB_TOKEN
                         type: Secret
                         value: github_pat
-                      - name: AZURE_CLIENT_ID
-                        type: Secret
-                        value: azure_client_id
-                      - name: AZURE_CLIENT_SECRET
-                        type: Secret
-                        value: azure_client_secret
                       - name: AZURE_TENANT_ID
                         type: Secret
                         value: azure_tenant_id
                       - name: AZURE_SUBSCRIPTION_ID
                         type: Secret
                         value: azure_subscription_id
-                      - name: AZURE_LOCATION
+                      - name: AZURE_RESOURCE_GROUP
                         type: String
-                        value: <+pipeline.variables.azure_location>
+                        value: <+pipeline.variables.azure_resource_group>
                     outputVariables: []
                   timeout: 30m
         tags: {}

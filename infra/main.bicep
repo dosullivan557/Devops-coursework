@@ -1,7 +1,4 @@
-targetScope = 'subscription'
-
-@description('Name of the resource group that will contain the container registry.')
-param resourceGroupName string = 'rg-change-audit-dev'
+targetScope = 'resourceGroup'
 
 @description('Azure region used for the resource group and container registry.')
 param location string = 'uksouth'
@@ -19,22 +16,15 @@ param registryPrefix string = 'changeaudit'
 ])
 param environment string = 'dev'
 
-var registryName = '${toLower(registryPrefix)}${uniqueString(subscription().id, resourceGroupName)}'
+var registryName = '${toLower(registryPrefix)}${uniqueString(resourceGroup().id)}'
 var tags = {
   application: 'change-audit'
   environment: environment
   managedBy: 'bicep'
 }
 
-resource resourceGroup 'Microsoft.Resources/resourceGroups@2024-11-01' = {
-  name: resourceGroupName
-  location: location
-  tags: tags
-}
-
 module containerRegistry './modules/container-registry.bicep' = {
   name: 'container-registry'
-  scope: resourceGroup
   params: {
     location: location
     registryName: registryName
@@ -42,7 +32,7 @@ module containerRegistry './modules/container-registry.bicep' = {
   }
 }
 
-output resourceGroupName string = resourceGroup.name
+output resourceGroupName string = resourceGroup().name
 output registryId string = containerRegistry.outputs.registryId
 output registryName string = containerRegistry.outputs.registryName
 output registryLoginServer string = containerRegistry.outputs.loginServer

@@ -1,8 +1,7 @@
 # Azure Container Registry infrastructure
 
-This Bicep deployment creates:
+This resource-group-scoped Bicep deployment creates:
 
-- A resource group for the Change Audit application.
 - A private Azure Container Registry using the low-cost `Basic` SKU.
 - A deterministic, globally unique registry name.
 
@@ -12,6 +11,7 @@ with Microsoft Entra ID through the Azure CLI or use a workload identity from CI
 ## Prerequisites
 
 - An active Azure subscription, including Azure for Students.
+- An existing `rg-change-audit-dev` resource group.
 - Azure CLI with Bicep support.
 - Permission to create resource groups and container registries.
 
@@ -34,28 +34,32 @@ Run these commands from the repository root:
 ```bash
 az bicep build --file infra/main.bicep
 
-az deployment sub what-if \
+az deployment group what-if \
   --name change-audit-infrastructure-preview \
-  --location uksouth \
-  --template-file infra/main.bicep \
+  --resource-group rg-change-audit-dev \
   --parameters infra/main.dev.bicepparam
 ```
 
 ## Deploy
 
+The Harness assignment pipeline uses Azure device-code authentication. Open the
+URL and enter the code printed in the Harness execution log when prompted. The
+plan and apply steps use separate short-lived Azure CLI containers, so each step
+requests its own login.
+
 ```bash
-az deployment sub create \
+az deployment group create \
   --name change-audit-infrastructure \
-  --location uksouth \
-  --template-file infra/main.bicep \
+  --resource-group rg-change-audit-dev \
   --parameters infra/main.dev.bicepparam
 ```
 
 Read the generated registry name and login server from the deployment outputs:
 
 ```bash
-az deployment sub show \
+az deployment group show \
   --name change-audit-infrastructure \
+  --resource-group rg-change-audit-dev \
   --query properties.outputs \
   --output table
 ```
@@ -63,8 +67,9 @@ az deployment sub show \
 ## Push an image manually
 
 ```bash
-ACR_NAME="$(az deployment sub show \
+ACR_NAME="$(az deployment group show \
   --name change-audit-infrastructure \
+  --resource-group rg-change-audit-dev \
   --query properties.outputs.registryName.value \
   --output tsv)"
 
