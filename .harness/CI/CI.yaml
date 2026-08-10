@@ -352,9 +352,11 @@ pipeline:
                             "$AZURE_CLI_IMAGE" \
                             sh -c '
                               set -eu
+                              export AZURE_EXTENSION_USE_DYNAMIC_INSTALL=yes_without_prompt
                               az login --use-device-code --tenant "$AZURE_TENANT_ID" --output none
                               az account set --subscription "$AZURE_SUBSCRIPTION_ID"
-                              az config set extension.use_dynamic_install=yes_without_prompt
+                              echo "Ensuring the Microsoft.App resource provider is registered"
+                              az provider register --namespace Microsoft.App --wait
                               az containerapp registry set \
                                 --name "$AZURE_CONTAINER_APP_NAME" \
                                 --resource-group "$AZURE_RESOURCE_GROUP" \
