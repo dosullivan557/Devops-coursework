@@ -83,20 +83,20 @@ pipeline:
                           docker start --attach "$CONTAINER_ID"
                     environmentVariables:
                       - name: GITHUB_TOKEN
-                        type: String
-                        value: <+secrets.getValue("github_pat")>
+                        type: Secret
+                        value: github_pat
                       - name: AZURE_CLIENT_ID
-                        type: String
-                        value: <+secrets.getValue("azure_client_id")>
+                        type: Secret
+                        value: azure_client_id
                       - name: AZURE_CLIENT_SECRET
-                        type: String
-                        value: <+secrets.getValue("azure_client_secret")>
+                        type: Secret
+                        value: azure_client_secret
                       - name: AZURE_TENANT_ID
-                        type: String
-                        value: <+secrets.getValue("azure_tenant_id")>
+                        type: Secret
+                        value: azure_tenant_id
                       - name: AZURE_SUBSCRIPTION_ID
-                        type: String
-                        value: <+secrets.getValue("azure_subscription_id")>
+                        type: Secret
+                        value: azure_subscription_id
                       - name: AZURE_LOCATION
                         type: String
                         value: <+pipeline.variables.azure_location>
@@ -174,20 +174,20 @@ pipeline:
                           docker start --attach "$CONTAINER_ID"
                     environmentVariables:
                       - name: GITHUB_TOKEN
-                        type: String
-                        value: <+secrets.getValue("github_pat")>
+                        type: Secret
+                        value: github_pat
                       - name: AZURE_CLIENT_ID
-                        type: String
-                        value: <+secrets.getValue("azure_client_id")>
+                        type: Secret
+                        value: azure_client_id
                       - name: AZURE_CLIENT_SECRET
-                        type: String
-                        value: <+secrets.getValue("azure_client_secret")>
+                        type: Secret
+                        value: azure_client_secret
                       - name: AZURE_TENANT_ID
-                        type: String
-                        value: <+secrets.getValue("azure_tenant_id")>
+                        type: Secret
+                        value: azure_tenant_id
                       - name: AZURE_SUBSCRIPTION_ID
-                        type: String
-                        value: <+secrets.getValue("azure_subscription_id")>
+                        type: Secret
+                        value: azure_subscription_id
                       - name: AZURE_LOCATION
                         type: String
                         value: <+pipeline.variables.azure_location>
