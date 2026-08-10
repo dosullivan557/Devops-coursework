@@ -6,8 +6,7 @@ trigger:
   description: ""
   tags: {}
   orgIdentifier: default
-  stagesToExecute:
-    - Test
+  stagesToExecute: []
   projectIdentifier: default_project
   pipelineIdentifier: CI
   source:
