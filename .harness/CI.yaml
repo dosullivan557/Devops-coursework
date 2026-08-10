@@ -144,7 +144,7 @@ pipeline:
                       timeout: 10m
               - step:
                   type: ShellScript
-                  name: Build application
+                  name: Application Dry Build
                   identifier: Build_application
                   spec:
                     shell: Bash
