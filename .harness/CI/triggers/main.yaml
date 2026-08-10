@@ -1,0 +1,29 @@
+trigger:
+  name: Main push
+  identifier: Main_push
+  enabled: true
+  encryptedWebhookSecretIdentifier: ""
+  description: ""
+  tags: {}
+  orgIdentifier: default
+  stagesToExecute: []
+  projectIdentifier: default_project
+  pipelineIdentifier: CI
+  source:
+    type: Webhook
+    spec:
+      type: Github
+      spec:
+        type: Push
+        spec:
+          connectorRef: Github
+          autoAbortPreviousExecutions: true
+          payloadConditions:
+            - key: targetBranch
+              operator: Equals
+              value: main
+          headerConditions: []
+  pipelineBranchName: main
+  inputSetBranchName: main
+  inputSetRefs:
+    - main

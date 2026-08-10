@@ -28,4 +28,7 @@ trigger:
             - Open
             - Reopen
             - Synchronize
-  pipelineBranchName: <+trigger.branch>
+  pipelineBranchName: <+trigger.sourceBranch>
+  inputSetBranchName: <+trigger.sourceBranch>
+  inputSetRefs:
+    - pull_request

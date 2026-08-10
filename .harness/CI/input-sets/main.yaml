@@ -1,0 +1,12 @@
+inputSet:
+  name: main
+  identifier: main
+  orgIdentifier: default
+  projectIdentifier: default_project
+  tags: {}
+  pipeline:
+    identifier: CI
+    variables:
+      - name: containerise
+        type: String
+        value: "true"

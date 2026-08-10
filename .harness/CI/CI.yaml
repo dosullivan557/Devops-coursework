@@ -1,0 +1,249 @@
+pipeline:
+  name: CI
+  identifier: CI
+  projectIdentifier: default_project
+  orgIdentifier: default
+  tags: {}
+  variables:
+    - name: containerise
+      type: String
+      description: Build the application container after tests pass
+      required: true
+      value: <+input>
+  stages:
+    - stage:
+        name: Test
+        identifier: Test
+        description: Validate and build the pull request on the local delegate
+        type: Custom
+        spec:
+          execution:
+            steps:
+              - step:
+                  type: ShellScript
+                  name: Prepare test workspace
+                  identifier: Prepare_test_workspace
+                  spec:
+                    shell: Bash
+                    executionTarget: {}
+                    delegateSelectors:
+                      - local-delegate
+                    source:
+                      type: Inline
+                      spec:
+                        script: |-
+                          set -eu
+
+                          NODE_VERSION="22.14.0"
+                          REPOSITORY_URL="https://github.com/dosullivan557/Devops-coursework.git"
+                          SOURCE_BRANCH='<+trigger.branch>'
+                          BUILD_ROOT="/tmp/change-audit-<+pipeline.executionId>"
+                          NODE_HOME="$BUILD_ROOT/node"
+                          SOURCE_DIR="$BUILD_ROOT/source"
+                          ASKPASS="$BUILD_ROOT/git-askpass.sh"
+
+                          case "$(uname -m)" in
+                            x86_64) NODE_ARCH="x64" ;;
+                            arm64|aarch64) NODE_ARCH="arm64" ;;
+                            *) echo "Unsupported delegate architecture: $(uname -m)" >&2; exit 1 ;;
+                          esac
+
+                          command -v curl >/dev/null 2>&1 || { echo "curl is required on the delegate" >&2; exit 1; }
+                          command -v git >/dev/null 2>&1 || { echo "git is required on the delegate" >&2; exit 1; }
+
+                          mkdir -p "$NODE_HOME"
+                          curl --fail --location --silent --show-error \
+                            "https://nodejs.org/dist/v${NODE_VERSION}/node-v${NODE_VERSION}-linux-${NODE_ARCH}.tar.gz" \
+                            | tar -xz --strip-components=1 -C "$NODE_HOME"
+                          export PATH="$NODE_HOME/bin:$PATH"
+
+                          node --version
+                          npm --version
+
+                          printf '%s\n' '#!/bin/sh' \
+                            'case "$1" in' \
+                            '  *Username*) printf "%s\\n" "x-access-token" ;;' \
+                            '  *Password*) printf "%s\\n" "$GITHUB_TOKEN" ;;' \
+                            'esac' > "$ASKPASS"
+                          chmod 700 "$ASKPASS"
+
+                          GIT_ASKPASS="$ASKPASS" GIT_ASKPASS_REQUIRE=force GIT_TERMINAL_PROMPT=0 \
+                          git clone --depth 1 --branch "$SOURCE_BRANCH" "$REPOSITORY_URL" "$SOURCE_DIR"
+                          cd "$SOURCE_DIR"
+
+                          npm ci
+                    environmentVariables:
+                      - name: GITHUB_TOKEN
+                        type: String
+                        value: <+secrets.getValue("github_pat")>
+                    outputVariables: []
+                  timeout: 20m
+              - parallel:
+                  - step:
+                      type: ShellScript
+                      name: Verify formatting
+                      identifier: Verify_formatting
+                      spec:
+                        shell: Bash
+                        executionTarget: {}
+                        delegateSelectors:
+                          - local-delegate
+                        source:
+                          type: Inline
+                          spec:
+                            script: |-
+                              set -eu
+                              BUILD_ROOT="/tmp/change-audit-<+pipeline.executionId>"
+                              export PATH="$BUILD_ROOT/node/bin:$PATH"
+                              cd "$BUILD_ROOT/source"
+                              npm run format:verify
+                        environmentVariables: []
+                        outputVariables: []
+                      timeout: 10m
+                  - step:
+                      type: ShellScript
+                      name: Lint
+                      identifier: Lint
+                      spec:
+                        shell: Bash
+                        executionTarget: {}
+                        delegateSelectors:
+                          - local-delegate
+                        source:
+                          type: Inline
+                          spec:
+                            script: |-
+                              set -eu
+                              BUILD_ROOT="/tmp/change-audit-<+pipeline.executionId>"
+                              export PATH="$BUILD_ROOT/node/bin:$PATH"
+                              cd "$BUILD_ROOT/source"
+                              npm run lint
+                        environmentVariables: []
+                        outputVariables: []
+                      timeout: 10m
+                  - step:
+                      type: ShellScript
+                      name: Typecheck
+                      identifier: Typecheck
+                      spec:
+                        shell: Bash
+                        executionTarget: {}
+                        delegateSelectors:
+                          - local-delegate
+                        source:
+                          type: Inline
+                          spec:
+                            script: |-
+                              set -eu
+                              BUILD_ROOT="/tmp/change-audit-<+pipeline.executionId>"
+                              export PATH="$BUILD_ROOT/node/bin:$PATH"
+                              cd "$BUILD_ROOT/source"
+                              npm run typecheck
+                        environmentVariables: []
+                        outputVariables: []
+                      timeout: 10m
+              - step:
+                  type: ShellScript
+                  name: Application Dry Build
+                  identifier: Build_application
+                  spec:
+                    shell: Bash
+                    executionTarget: {}
+                    delegateSelectors:
+                      - local-delegate
+                    source:
+                      type: Inline
+                      spec:
+                        script: |-
+                          set -eu
+                          BUILD_ROOT="/tmp/change-audit-<+pipeline.executionId>"
+                          export PATH="$BUILD_ROOT/node/bin:$PATH"
+                          cd "$BUILD_ROOT/source"
+                          npm run build
+                    environmentVariables: []
+                    outputVariables: []
+                  timeout: 15m
+              - step:
+                  type: ShellScript
+                  name: Clean test workspace
+                  identifier: Clean_test_workspace
+                  spec:
+                    shell: Bash
+                    executionTarget: {}
+                    delegateSelectors:
+                      - local-delegate
+                    source:
+                      type: Inline
+                      spec:
+                        script: |-
+                          set -eu
+                          BUILD_ROOT="/tmp/change-audit-<+pipeline.executionId>"
+                          case "$BUILD_ROOT" in
+                            /tmp/change-audit-*) rm -rf -- "$BUILD_ROOT" ;;
+                            *) echo "Refusing to remove unexpected path: $BUILD_ROOT" >&2; exit 1 ;;
+                          esac
+                    environmentVariables: []
+                    outputVariables: []
+                  timeout: 5m
+                  when:
+                    stageStatus: All
+        tags: {}
+    - stage:
+        name: Containerise
+        identifier: Containerise
+        description: Build the production container after validation succeeds
+        type: Custom
+        spec:
+          execution:
+            steps:
+              - step:
+                  type: ShellScript
+                  name: Build container
+                  identifier: Build_container
+                  spec:
+                    shell: Bash
+                    executionTarget: {}
+                    delegateSelectors:
+                      - local-delegate
+                    source:
+                      type: Inline
+                      spec:
+                        script: |-
+                          set -eu
+
+                          REPOSITORY_URL="https://github.com/dosullivan557/Devops-coursework.git"
+                          SOURCE_BRANCH='<+trigger.branch>'
+                          IMAGE_TAG="change-audit:<+pipeline.sequenceId>"
+                          BUILD_ROOT="$(mktemp -d /tmp/change-audit-container.XXXXXX)"
+                          SOURCE_DIR="$BUILD_ROOT/source"
+                          ASKPASS="$BUILD_ROOT/git-askpass.sh"
+
+                          cleanup() {
+                            rm -rf "$BUILD_ROOT"
+                          }
+                          trap cleanup EXIT
+
+                          command -v docker >/dev/null 2>&1 || { echo "docker is required on the delegate" >&2; exit 1; }
+                          command -v git >/dev/null 2>&1 || { echo "git is required on the delegate" >&2; exit 1; }
+
+                          printf '%s\n' '#!/bin/sh' \
+                            'case "$1" in' \
+                            '  *Username*) printf "%s\\n" "x-access-token" ;;' \
+                            '  *Password*) printf "%s\\n" "$GITHUB_TOKEN" ;;' \
+                            'esac' > "$ASKPASS"
+                          chmod 700 "$ASKPASS"
+
+                          GIT_ASKPASS="$ASKPASS" GIT_ASKPASS_REQUIRE=force GIT_TERMINAL_PROMPT=0 \
+                            git clone --depth 1 --branch "$SOURCE_BRANCH" "$REPOSITORY_URL" "$SOURCE_DIR"
+
+                          docker build --file "$SOURCE_DIR/dockerfile" --tag "$IMAGE_TAG" "$SOURCE_DIR"
+                    environmentVariables:
+                      - name: GITHUB_TOKEN
+                        type: String
+                        value: <+secrets.getValue("github_pat")>
+                    outputVariables: []
+                  timeout: 20m
+        when:
+          pipelineStatus: Success
+          condition: <+pipeline.variables.containerise> == "true"
+        tags: {}
