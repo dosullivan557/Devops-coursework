@@ -16,6 +16,11 @@ pipeline:
       description: Existing Azure resource group that receives the infrastructure
       required: true
       value: rg-change-audit-dev
+    - name: azure_resource_location
+      type: String
+      description: Azure Policy-approved region for the container registry
+      required: true
+      value: <+input>
     - name: azure_tenant_id
       type: String
       description: Microsoft Entra tenant containing the Azure for Students subscription
@@ -84,6 +89,7 @@ pipeline:
                             --env 'AZURE_TENANT_ID=<+pipeline.variables.azure_tenant_id>' \
                             --env 'AZURE_SUBSCRIPTION_ID=<+pipeline.variables.azure_subscription_id>' \
                             --env AZURE_RESOURCE_GROUP \
+                            --env AZURE_RESOURCE_LOCATION \
                             --workdir /workspace \
                             "$AZURE_CLI_IMAGE" \
                             sh /workspace/infra/harness-deploy.sh plan)"
@@ -96,6 +102,9 @@ pipeline:
                       - name: AZURE_RESOURCE_GROUP
                         type: String
                         value: <+pipeline.variables.azure_resource_group>
+                      - name: AZURE_RESOURCE_LOCATION
+                        type: String
+                        value: <+pipeline.variables.azure_resource_location>
                     outputVariables: []
                   timeout: 20m
               - step:
@@ -161,6 +170,7 @@ pipeline:
                             --env 'AZURE_TENANT_ID=<+pipeline.variables.azure_tenant_id>' \
                             --env 'AZURE_SUBSCRIPTION_ID=<+pipeline.variables.azure_subscription_id>' \
                             --env AZURE_RESOURCE_GROUP \
+                            --env AZURE_RESOURCE_LOCATION \
                             --workdir /workspace \
                             "$AZURE_CLI_IMAGE" \
                             sh /workspace/infra/harness-deploy.sh apply)"
@@ -173,6 +183,9 @@ pipeline:
                       - name: AZURE_RESOURCE_GROUP
                         type: String
                         value: <+pipeline.variables.azure_resource_group>
+                      - name: AZURE_RESOURCE_LOCATION
+                        type: String
+                        value: <+pipeline.variables.azure_resource_location>
                     outputVariables: []
                   timeout: 30m
         tags: {}

@@ -42,7 +42,8 @@ az deployment group what-if \
 
 ## Deploy
 
-The Harness assignment pipeline uses Azure device-code authentication. Open the
+The Harness assignment pipeline prompts for an Azure Policy-approved registry
+region and uses Azure device-code authentication. Open the
 URL and enter the code printed in the Harness execution log when prompted. The
 plan and apply steps use separate short-lived Azure CLI containers, so each step
 requests its own login.

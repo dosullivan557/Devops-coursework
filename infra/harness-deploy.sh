@@ -3,13 +3,13 @@
 set -eu
 
 OPERATION="${1:-}"
-PARAMETERS_FILE="infra/main.dev.bicepparam"
 TEMPLATE_FILE="infra/main.bicep"
 DEPLOYMENT_NAME="change-audit-infrastructure"
 
 : "${AZURE_TENANT_ID:?AZURE_TENANT_ID is required}"
 : "${AZURE_SUBSCRIPTION_ID:?AZURE_SUBSCRIPTION_ID is required}"
 : "${AZURE_RESOURCE_GROUP:?AZURE_RESOURCE_GROUP is required}"
+: "${AZURE_RESOURCE_LOCATION:?AZURE_RESOURCE_LOCATION is required}"
 
 az login \
   --use-device-code \
@@ -26,19 +26,22 @@ case "$OPERATION" in
     az deployment group validate \
       --name "$DEPLOYMENT_NAME" \
       --resource-group "$AZURE_RESOURCE_GROUP" \
-      --parameters "$PARAMETERS_FILE" \
+      --template-file "$TEMPLATE_FILE" \
+      --parameters location="$AZURE_RESOURCE_LOCATION" \
       --output table
 
     az deployment group what-if \
       --name "$DEPLOYMENT_NAME" \
       --resource-group "$AZURE_RESOURCE_GROUP" \
-      --parameters "$PARAMETERS_FILE"
+      --template-file "$TEMPLATE_FILE" \
+      --parameters location="$AZURE_RESOURCE_LOCATION"
     ;;
   apply)
     az deployment group create \
       --name "$DEPLOYMENT_NAME" \
       --resource-group "$AZURE_RESOURCE_GROUP" \
-      --parameters "$PARAMETERS_FILE" \
+      --template-file "$TEMPLATE_FILE" \
+      --parameters location="$AZURE_RESOURCE_LOCATION" \
       --query properties.outputs \
       --output json
     ;;
