@@ -1,6 +1,6 @@
 trigger:
-  name: Pull request
-  identifier: Pull_request
+  name: Main push
+  identifier: Main_push
   enabled: true
   encryptedWebhookSecretIdentifier: ""
   description: ""
@@ -14,7 +14,7 @@ trigger:
     spec:
       type: Github
       spec:
-        type: PullRequest
+        type: Push
         spec:
           connectorRef: Github
           autoAbortPreviousExecutions: true
@@ -23,12 +23,7 @@ trigger:
               operator: Equals
               value: main
           headerConditions: []
-          actions:
-            - Edit
-            - Open
-            - Reopen
-            - Synchronize
-  pipelineBranchName: <+trigger.branch>
-  inputSetBranchName: <+trigger.sourceBranch>
+  pipelineBranchName: main
+  inputSetBranchName: main
   inputSetRefs:
-    - pull_request
+    - main
