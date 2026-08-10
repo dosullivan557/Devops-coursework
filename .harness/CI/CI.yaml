@@ -20,6 +20,26 @@ pipeline:
       description: Azure Container Registry login server
       required: true
       value: <+input>
+    - name: azure_resource_group
+      type: String
+      description: Resource group containing the Azure Container App
+      required: true
+      value: <+input>
+    - name: azure_container_app_name
+      type: String
+      description: Azure Container App updated after the image is published
+      required: true
+      value: <+input>
+    - name: azure_tenant_id
+      type: String
+      description: Microsoft Entra tenant used for deployment
+      required: true
+      value: <+input>
+    - name: azure_subscription_id
+      type: String
+      description: Azure subscription containing the Container App
+      required: true
+      value: <+input>
   stages:
     - stage:
         name: Test
@@ -256,6 +276,7 @@ pipeline:
                             echo "Could not read version from package.json" >&2
                             exit 1
                           fi
+                          export IMAGE_VERSION
                           IMAGE="$ACR_LOGIN_SERVER/change-audit:$IMAGE_VERSION"
                           echo "Building and pushing $IMAGE"
 
@@ -274,9 +295,82 @@ pipeline:
                       - name: GITHUB_TOKEN
                         type: String
                         value: <+secrets.getValue("github_pat")>
-                    outputVariables: []
+                    outputVariables:
+                      - name: IMAGE_VERSION
+                        type: String
+                        value: IMAGE_VERSION
                   timeout: 20m
         when:
           pipelineStatus: Success
           condition: <+pipeline.variables.containerise> == "true" && <+pipeline.variables.push_to_acr> == "true"
+        tags: {}
+    - stage:
+        name: Deploy
+        identifier: Deploy
+        description: Deploy the image produced by Containerise to Azure Container Apps
+        type: Custom
+        spec:
+          execution:
+            steps:
+              - step:
+                  type: ShellScript
+                  name: Deploy container app
+                  identifier: Deploy_container_app
+                  spec:
+                    shell: Bash
+                    executionTarget: {}
+                    delegateSelectors:
+                      - local-delegate
+                    source:
+                      type: Inline
+                      spec:
+                        script: |-
+                          set -eu
+
+                          AZURE_CLI_IMAGE="mcr.microsoft.com/azure-cli:2.88.0"
+                          IMAGE_VERSION='<+pipeline.stages.Containerise.spec.execution.steps.Build_container.output.outputVariables.IMAGE_VERSION>'
+                          ACR_LOGIN_SERVER='<+pipeline.variables.acr_login_server>'
+                          IMAGE="$ACR_LOGIN_SERVER/change-audit:$IMAGE_VERSION"
+
+                          if [ -z "$IMAGE_VERSION" ]; then
+                            echo "Containerise did not produce IMAGE_VERSION" >&2
+                            exit 1
+                          fi
+
+                          command -v docker >/dev/null 2>&1 || { echo "docker is required on the delegate" >&2; exit 1; }
+                          echo "Deploying $IMAGE"
+                          docker pull "$AZURE_CLI_IMAGE"
+                          docker run --rm \
+                            --env 'AZURE_TENANT_ID=<+pipeline.variables.azure_tenant_id>' \
+                            --env 'AZURE_SUBSCRIPTION_ID=<+pipeline.variables.azure_subscription_id>' \
+                            --env 'AZURE_RESOURCE_GROUP=<+pipeline.variables.azure_resource_group>' \
+                            --env 'AZURE_CONTAINER_APP_NAME=<+pipeline.variables.azure_container_app_name>' \
+                            --env "IMAGE=$IMAGE" \
+                            --env 'ACR_LOGIN_SERVER=<+pipeline.variables.acr_login_server>' \
+                            --env 'ACR_USERNAME=<+secrets.getValue("account.acr_username")>' \
+                            --env 'ACR_PASSWORD=<+secrets.getValue("account.acr_password")>' \
+                            "$AZURE_CLI_IMAGE" \
+                            sh -c '
+                              set -eu
+                              az login --use-device-code --tenant "$AZURE_TENANT_ID" --output none
+                              az account set --subscription "$AZURE_SUBSCRIPTION_ID"
+                              az config set extension.use_dynamic_install=yes_without_prompt
+                              az containerapp registry set \
+                                --name "$AZURE_CONTAINER_APP_NAME" \
+                                --resource-group "$AZURE_RESOURCE_GROUP" \
+                                --server "$ACR_LOGIN_SERVER" \
+                                --username "$ACR_USERNAME" \
+                                --password "$ACR_PASSWORD"
+                              az containerapp update \
+                                --name "$AZURE_CONTAINER_APP_NAME" \
+                                --resource-group "$AZURE_RESOURCE_GROUP" \
+                                --image "$IMAGE" \
+                                --output table
+                            '
+                    environmentVariables: []
+                    outputVariables: []
+                  timeout: 20m
+        when:
+          pipelineStatus: Success
+          condition: <+trigger.branch> == "main" && <+pipeline.variables.containerise> == "true" && <+pipeline.variables.push_to_acr> == "true"
         tags: {}
