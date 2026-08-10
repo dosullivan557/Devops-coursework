@@ -1,0 +1,179 @@
+pipeline:
+  name: IAC
+  identifier: IAC
+  projectIdentifier: default_project
+  orgIdentifier: default
+  description: Validate, review, and deploy the Azure Container Registry Bicep configuration
+  tags: {}
+  variables:
+    - name: source_branch
+      type: String
+      description: Git branch containing the Bicep configuration to deploy
+      required: true
+      value: <+input>.default(main)
+    - name: azure_resource_group
+      type: String
+      description: Existing Azure resource group that receives the infrastructure
+      required: true
+      value: rg-change-audit-dev
+    - name: azure_resource_location
+      type: String
+      description: Azure Policy-approved region for the container registry
+      required: true
+      value: swedencentral
+    - name: azure_tenant_id
+      type: String
+      description: Microsoft Entra tenant containing the Azure for Students subscription
+      required: true
+      value: 5d2d9e33-bd77-46e1-b1e6-721c91c9373e
+    - name: azure_subscription_id
+      type: String
+      description: Azure for Students subscription identifier
+      required: true
+      value: d1237ef8-85ef-4c72-be67-a25cc386891e
+  stages:
+    - stage:
+        name: Plan and deploy
+        identifier: Plan_and_deploy
+        type: Custom
+        description: Preview and approve Azure infrastructure changes before deployment
+        spec:
+          execution:
+            steps:
+              - step:
+                  type: ShellScript
+                  name: Bicep validate and what-if
+                  identifier: Bicep_validate_and_what_if
+                  spec:
+                    shell: Bash
+                    executionTarget: {}
+                    delegateSelectors:
+                      - local-delegate
+                    source:
+                      type: Inline
+                      spec:
+                        script: |-
+                          set -eu
+
+                          REPOSITORY_URL="https://github.com/dosullivan557/Devops-coursework.git"
+                          SOURCE_BRANCH='<+pipeline.variables.source_branch>'
+                          AZURE_CLI_IMAGE="mcr.microsoft.com/azure-cli:2.88.0"
+                          BUILD_ROOT="$(mktemp -d /tmp/change-audit-iac-plan.XXXXXX)"
+                          SOURCE_DIR="$BUILD_ROOT/source"
+                          ASKPASS="$BUILD_ROOT/git-askpass.sh"
+                          CONTAINER_ID=""
+
+                          cleanup() {
+                            if [ -n "$CONTAINER_ID" ]; then
+                              docker rm --force "$CONTAINER_ID" >/dev/null 2>&1 || true
+                            fi
+                            rm -rf "$BUILD_ROOT"
+                          }
+                          trap cleanup EXIT
+
+                          command -v docker >/dev/null 2>&1 || { echo "docker is required on the delegate" >&2; exit 1; }
+                          command -v git >/dev/null 2>&1 || { echo "git is required on the delegate" >&2; exit 1; }
+
+                          printf '%s\n' '#!/bin/sh' \
+                            'case "$1" in' \
+                            '  *Username*) printf "%s\\n" "x-access-token" ;;' \
+                            '  *Password*) printf "%s\\n" "$GITHUB_TOKEN" ;;' \
+                            'esac' > "$ASKPASS"
+                          chmod 700 "$ASKPASS"
+
+                          GIT_ASKPASS="$ASKPASS" GIT_ASKPASS_REQUIRE=force GIT_TERMINAL_PROMPT=0 \
+                            git clone --depth 1 --branch "$SOURCE_BRANCH" "$REPOSITORY_URL" "$SOURCE_DIR"
+
+                          docker pull "$AZURE_CLI_IMAGE"
+                          CONTAINER_ID="$(docker create \
+                            --env 'AZURE_TENANT_ID=<+pipeline.variables.azure_tenant_id>' \
+                            --env 'AZURE_SUBSCRIPTION_ID=<+pipeline.variables.azure_subscription_id>' \
+                            --env 'AZURE_RESOURCE_GROUP=<+pipeline.variables.azure_resource_group>' \
+                            --env 'AZURE_RESOURCE_LOCATION=<+pipeline.variables.azure_resource_location>' \
+                            --workdir /workspace \
+                            "$AZURE_CLI_IMAGE" \
+                            sh /workspace/infra/harness-deploy.sh plan)"
+                          docker cp "$SOURCE_DIR/." "$CONTAINER_ID:/workspace"
+                          docker start --attach "$CONTAINER_ID"
+                    environmentVariables:
+                      - name: GITHUB_TOKEN
+                        type: Secret
+                        value: github_pat
+                    outputVariables: []
+                  timeout: 20m
+              - step:
+                  type: HarnessApproval
+                  name: Approve infrastructure deployment
+                  identifier: Approve_infrastructure_deployment
+                  spec:
+                    approvalMessage: Review the Bicep what-if output and approve the Azure deployment.
+                    includePipelineExecutionHistory: true
+                    approvers:
+                      userGroups:
+                        - account._account_all_users
+                      minimumCount: 1
+                      disallowPipelineExecutor: false
+                    approverInputs: []
+                  timeout: 1d
+              - step:
+                  type: ShellScript
+                  name: Deploy Bicep
+                  identifier: Deploy_Bicep
+                  spec:
+                    shell: Bash
+                    executionTarget: {}
+                    delegateSelectors:
+                      - local-delegate
+                    source:
+                      type: Inline
+                      spec:
+                        script: |-
+                          set -eu
+
+                          REPOSITORY_URL="https://github.com/dosullivan557/Devops-coursework.git"
+                          SOURCE_BRANCH='<+pipeline.variables.source_branch>'
+                          AZURE_CLI_IMAGE="mcr.microsoft.com/azure-cli:2.88.0"
+                          BUILD_ROOT="$(mktemp -d /tmp/change-audit-iac-apply.XXXXXX)"
+                          SOURCE_DIR="$BUILD_ROOT/source"
+                          ASKPASS="$BUILD_ROOT/git-askpass.sh"
+                          CONTAINER_ID=""
+
+                          cleanup() {
+                            if [ -n "$CONTAINER_ID" ]; then
+                              docker rm --force "$CONTAINER_ID" >/dev/null 2>&1 || true
+                            fi
+                            rm -rf "$BUILD_ROOT"
+                          }
+                          trap cleanup EXIT
+
+                          command -v docker >/dev/null 2>&1 || { echo "docker is required on the delegate" >&2; exit 1; }
+                          command -v git >/dev/null 2>&1 || { echo "git is required on the delegate" >&2; exit 1; }
+
+                          printf '%s\n' '#!/bin/sh' \
+                            'case "$1" in' \
+                            '  *Username*) printf "%s\\n" "x-access-token" ;;' \
+                            '  *Password*) printf "%s\\n" "$GITHUB_TOKEN" ;;' \
+                            'esac' > "$ASKPASS"
+                          chmod 700 "$ASKPASS"
+
+                          GIT_ASKPASS="$ASKPASS" GIT_ASKPASS_REQUIRE=force GIT_TERMINAL_PROMPT=0 \
+                            git clone --depth 1 --branch "$SOURCE_BRANCH" "$REPOSITORY_URL" "$SOURCE_DIR"
+
+                          docker pull "$AZURE_CLI_IMAGE"
+                          CONTAINER_ID="$(docker create \
+                            --env 'AZURE_TENANT_ID=<+pipeline.variables.azure_tenant_id>' \
+                            --env 'AZURE_SUBSCRIPTION_ID=<+pipeline.variables.azure_subscription_id>' \
+                            --env 'AZURE_RESOURCE_GROUP=<+pipeline.variables.azure_resource_group>' \
+                            --env 'AZURE_RESOURCE_LOCATION=<+pipeline.variables.azure_resource_location>' \
+                            --workdir /workspace \
+                            "$AZURE_CLI_IMAGE" \
+                            sh /workspace/infra/harness-deploy.sh apply)"
+                          docker cp "$SOURCE_DIR/." "$CONTAINER_ID:/workspace"
+                          docker start --attach "$CONTAINER_ID"
+                    environmentVariables:
+                      - name: GITHUB_TOKEN
+                        type: Secret
+                        value: github_pat
+                    outputVariables: []
+                  timeout: 30m
+        tags: {}

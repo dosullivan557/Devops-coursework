@@ -10,3 +10,9 @@ inputSet:
       - name: containerise
         type: String
         value: "true"
+      - name: push_to_acr
+        type: String
+        value: "true"
+      - name: acr_login_server
+        type: String
+        value: changeauditm47b6whvnosgi.azurecr.io
