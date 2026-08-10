@@ -4,120 +4,72 @@ pipeline:
   projectIdentifier: default_project
   orgIdentifier: default
   tags: {}
+  properties:
+    ci:
+      codebase:
+        connectorRef: Github
+        repoName: dosullivan557/Devops-coursework
+        build: <+input>
   stages:
     - stage:
         name: Test
         identifier: Test
-        description: ""
-        type: Custom
+        description: Install, validate, and build the application
+        type: CI
         spec:
+          cloneCodebase: true
+          caching:
+            enabled: true
+          platform:
+            os: Linux
+            arch: Amd64
+          runtime:
+            type: Cloud
+            spec: {}
           execution:
             steps:
               - step:
-                  type: ShellScript
-                  name: Install
-                  identifier: Install
+                  type: Run
+                  name: Install dependencies
+                  identifier: Install_dependencies
                   spec:
-                    shell: Bash
-                    executionTarget: {}
-                    delegateSelectors:
-                      - harness-delegate
-                    source:
-                      type: Inline
-                      spec:
-                        script: |-
-                          set -euo pipefail
-                          NODE_VERSION="22.14.0"
-                          NODE_HOME="$PWD/.harness-node"
-                          if [[ ! -x "$NODE_HOME/bin/node" ]]; then
-                            case "$(uname -m)" in
-                              x86_64) NODE_ARCH="x64" ;;
-                              arm64|aarch64) NODE_ARCH="arm64" ;;
-                              *) echo "Unsupported runner architecture: $(uname -m)" >&2; exit 1 ;;
-                            esac
-                            mkdir -p "$NODE_HOME"
-                            curl --fail --location --silent --show-error \
-                              "https://nodejs.org/dist/v${NODE_VERSION}/node-v${NODE_VERSION}-linux-${NODE_ARCH}.tar.xz" \
-                              | tar -xJ --strip-components=1 -C "$NODE_HOME"
-                          fi
-                          export PATH="$NODE_HOME/bin:$PATH"
-                          node --version
-                          npm --version
-                          npm ci
-                    environmentVariables: []
-                    outputVariables: []
+                    shell: Sh
+                    command: |-
+                      node --version
+                      npm --version
+                      npm ci
                   timeout: 10m
               - parallel:
                   - step:
-                      type: ShellScript
-                      name: Test
-                      identifier: Test
-                      spec:
-                        shell: Bash
-                        executionTarget: {}
-                        delegateSelectors:
-                          - harness-delegate
-                        source:
-                          type: Inline
-                          spec:
-                            script: |-
-                              export PATH="$PWD/.harness-node/bin:$PATH"
-                              npm run test:coverage
-                        environmentVariables: []
-                        outputVariables: []
-                      timeout: 10m
-                  - step:
-                      type: ShellScript
+                      type: Run
                       name: Formatting
                       identifier: Formatting
                       spec:
-                        shell: Bash
-                        executionTarget: {}
-                        delegateSelectors:
-                          - harness-delegate
-                        source:
-                          type: Inline
-                          spec:
-                            script: |-
-                              export PATH="$PWD/.harness-node/bin:$PATH"
-                              npm run format:verify
-                        environmentVariables: []
-                        outputVariables: []
+                        shell: Sh
+                        command: npm run format:verify
                       timeout: 10m
                   - step:
-                      type: ShellScript
+                      type: Run
                       name: Linting
                       identifier: Linting
                       spec:
-                        shell: Bash
-                        executionTarget: {}
-                        delegateSelectors:
-                          - harness-delegate
-                        source:
-                          type: Inline
-                          spec:
-                            script: |-
-                              export PATH="$PWD/.harness-node/bin:$PATH"
-                              npm run lint
-                        environmentVariables: []
-                        outputVariables: []
+                        shell: Sh
+                        command: npm run lint
                       timeout: 10m
                   - step:
-                      type: ShellScript
-                      name: Typescript Check
-                      identifier: Typescript_Check
+                      type: Run
+                      name: TypeScript check
+                      identifier: TypeScript_check
                       spec:
-                        shell: Bash
-                        executionTarget: {}
-                        delegateSelectors:
-                          - harness-delegate
-                        source:
-                          type: Inline
-                          spec:
-                            script: |-
-                              export PATH="$PWD/.harness-node/bin:$PATH"
-                              npm run tsc
-                        environmentVariables: []
-                        outputVariables: []
+                        shell: Sh
+                        command: npm run typecheck
                       timeout: 10m
+                  - step:
+                      type: Run
+                      name: Production build
+                      identifier: Production_build
+                      spec:
+                        shell: Sh
+                        command: npm run build
+                      timeout: 15m
         tags: {}
