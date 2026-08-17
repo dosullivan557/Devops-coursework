@@ -260,6 +260,7 @@ pipeline:
 
                           command -v docker >/dev/null 2>&1 || { echo "docker is required on the delegate" >&2; exit 1; }
                           command -v git >/dev/null 2>&1 || { echo "git is required on the delegate" >&2; exit 1; }
+                          docker buildx version >/dev/null 2>&1 || { echo "Docker Buildx is required on the delegate" >&2; exit 1; }
 
                           printf '%s\n' '#!/bin/sh' \
                             'case "$1" in' \
@@ -286,15 +287,24 @@ pipeline:
                               --username '<+secrets.getValue("account.acr_username")>' \
                               --password-stdin
 
-                          docker build \
+                          docker buildx build \
                             --platform linux/amd64 \
                             --file "$SOURCE_DIR/dockerfile" \
                             --tag "$IMAGE" \
                             --tag "$LATEST_IMAGE" \
+                            --push \
                             "$SOURCE_DIR"
 
-                          docker push "$IMAGE"
-                          docker push "$LATEST_IMAGE"
+                          IMAGE_METADATA="$(docker buildx imagetools inspect --format '{{json .Image}}' "$IMAGE")"
+                          echo "Published image metadata: $IMAGE_METADATA"
+                          case "$IMAGE_METADATA" in
+                            *'"os":"linux"'*) ;;
+                            *) echo "Published image OS is not linux" >&2; exit 1 ;;
+                          esac
+                          case "$IMAGE_METADATA" in
+                            *'"architecture":"amd64"'*) ;;
+                            *) echo "Published image architecture is not amd64" >&2; exit 1 ;;
+                          esac
                     environmentVariables:
                       - name: GITHUB_TOKEN
                         type: String
