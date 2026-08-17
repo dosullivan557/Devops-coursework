@@ -278,7 +278,8 @@ pipeline:
                           fi
                           export IMAGE_VERSION
                           IMAGE="$ACR_LOGIN_SERVER/change-audit:$IMAGE_VERSION"
-                          echo "Building and pushing $IMAGE"
+                          LATEST_IMAGE="$ACR_LOGIN_SERVER/change-audit:latest"
+                          echo "Building and pushing $IMAGE and $LATEST_IMAGE"
 
                           printf '%s' '<+secrets.getValue("account.acr_password")>' \
                             | docker login "$ACR_LOGIN_SERVER" \
@@ -286,11 +287,14 @@ pipeline:
                               --password-stdin
 
                           docker build \
+                            --platform linux/amd64 \
                             --file "$SOURCE_DIR/dockerfile" \
                             --tag "$IMAGE" \
+                            --tag "$LATEST_IMAGE" \
                             "$SOURCE_DIR"
 
                           docker push "$IMAGE"
+                          docker push "$LATEST_IMAGE"
                     environmentVariables:
                       - name: GITHUB_TOKEN
                         type: String
