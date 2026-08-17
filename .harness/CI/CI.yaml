@@ -357,12 +357,6 @@ pipeline:
                               az account set --subscription "$AZURE_SUBSCRIPTION_ID"
                               echo "Ensuring the Microsoft.App resource provider is registered"
                               az provider register --namespace Microsoft.App --wait
-                              az containerapp registry set \
-                                --name "$AZURE_CONTAINER_APP_NAME" \
-                                --resource-group "$AZURE_RESOURCE_GROUP" \
-                                --server "$ACR_LOGIN_SERVER" \
-                                --username "$ACR_USERNAME" \
-                                --password "$ACR_PASSWORD"
                               az containerapp update \
                                 --name "$AZURE_CONTAINER_APP_NAME" \
                                 --resource-group "$AZURE_RESOURCE_GROUP" \

@@ -2,7 +2,7 @@
 
 set -eu
 
-: "${HARNESS_DELEGATE_TOKEN:?Set HARNESS_DELEGATE_TOKEN to a newly generated Harness delegate token}"
+# : "${HARNESS_DELEGATE_TOKEN:?Set HARNESS_DELEGATE_TOKEN to a newly generated Harness delegate token}"
 
 DELEGATE_IMAGE="change-audit/harness-delegate:26.07.89703-docker"
 

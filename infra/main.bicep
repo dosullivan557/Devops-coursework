@@ -26,6 +26,16 @@ param databaseAdministratorPassword string
 @description('PostgreSQL database used by the application.')
 param databaseName string = 'change_audit'
 
+@description('Name of the Azure Container App.')
+param containerAppName string = 'change-audit'
+
+@description('Initial application image tag. The image must already exist in ACR.')
+param containerImageTag string = '0.2.6'
+
+@secure()
+@description('Secret used to sign application authentication tokens.')
+param authSecret string
+
 var registryName = '${toLower(registryPrefix)}${uniqueString(resourceGroup().id)}'
 var databaseServerName = '${toLower(registryPrefix)}-db-${uniqueString(resourceGroup().id)}'
 var tags = {
@@ -55,6 +65,24 @@ module postgresql './modules/postgresql.bicep' = {
   }
 }
 
+module containerApp './modules/container-app.bicep' = {
+  name: 'container-app'
+  params: {
+    location: location
+    containerAppName: containerAppName
+    managedEnvironmentName: '${containerAppName}-${environment}-env'
+    registryName: containerRegistry.outputs.registryName
+    registryLoginServer: containerRegistry.outputs.loginServer
+    imageTag: containerImageTag
+    databaseHost: postgresql.outputs.fullyQualifiedDomainName
+    databaseAdministratorLogin: databaseAdministratorLogin
+    databaseAdministratorPassword: databaseAdministratorPassword
+    databaseName: postgresql.outputs.databaseName
+    authSecret: authSecret
+    tags: tags
+  }
+}
+
 output resourceGroupName string = resourceGroup().name
 output registryId string = containerRegistry.outputs.registryId
 output registryName string = containerRegistry.outputs.registryName
@@ -63,3 +91,6 @@ output databaseServerId string = postgresql.outputs.serverId
 output databaseHost string = postgresql.outputs.fullyQualifiedDomainName
 output databaseName string = postgresql.outputs.databaseName
 output databaseAdministratorLogin string = databaseAdministratorLogin
+output containerAppId string = containerApp.outputs.containerAppId
+output containerAppName string = containerApp.outputs.containerAppName
+output containerAppUrl string = containerApp.outputs.containerAppUrl
