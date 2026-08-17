@@ -8,6 +8,9 @@ This resource-group-scoped Bicep deployment creates:
   `Standard_B1ms` SKU.
 - A `change_audit` PostgreSQL database with connections from Azure services
   allowed through the server firewall.
+- An Azure Container Apps managed environment.
+- A public `change-audit` Container App listening on port 3000.
+- A user-assigned managed identity with `AcrPull` access to the registry.
 
 Anonymous pulls are disabled. Authenticate with Microsoft Entra ID through the
 Azure CLI where possible. For this student environment, the registry administrator
@@ -35,12 +38,27 @@ password unexpectedly. The value must be 8-128 characters and contain characters
 from at least three of these groups: uppercase, lowercase, numbers, and
 punctuation.
 
+Create an account-level Harness text secret named `auth_secret` for signing
+application authentication tokens. Generate a high-entropy value, for example:
+
+```bash
+openssl rand -base64 32
+```
+
+Keep this value stable between deployments. Changing it invalidates existing
+application sessions.
+
 ## Prerequisites
 
 - An active Azure subscription, including Azure for Students.
 - An existing `rg-change-audit-dev` resource group.
 - Azure CLI with Bicep support.
 - Permission to create resource groups and container registries.
+- Permission to create managed identities and role assignments. The deployment
+  principal typically needs `Owner` or `User Access Administrator` for the
+  registry-scoped `AcrPull` assignment.
+- An initial `change-audit:0.2.6` image in the generated registry. Override the
+  `containerImageTag` parameter if a different initial tag is available.
 
 Sign in and select the student subscription:
 
@@ -63,6 +81,8 @@ lowercase, numbers, and punctuation.
 ```bash
 read -s DATABASE_ADMIN_PASSWORD
 export DATABASE_ADMIN_PASSWORD
+read -s AUTH_SECRET
+export AUTH_SECRET
 ```
 
 Run these commands from the repository root:
@@ -111,7 +131,11 @@ postgresql://changeauditadmin:PASSWORD@DATABASE_HOST:5432/change_audit?sslmode=r
 ```
 
 The deployment creates the database itself, but it does not apply the application
-schema. Run `init.sql` against the new database before starting the application.
+schema. Run `init.sql` against the new database before using the application.
+
+The Container App pulls from ACR with its managed identity. Subsequent CI
+deployments only need to update the image; registry credentials remain managed by
+Bicep.
 
 ## Push an image manually
 

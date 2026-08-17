@@ -99,6 +99,9 @@ resource containerApp 'Microsoft.App/containerApps@2025-01-01' = {
       secrets: [
         {
           name: 'database-config'
+          // This JSON value is derived from a secure parameter; Bicep's string()
+          // conversion does not preserve the secure-type annotation.
+          #disable-next-line use-secure-value-for-secure-inputs
           value: string({
             host: databaseHost
             port: 5432

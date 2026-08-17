@@ -346,9 +346,6 @@ pipeline:
                             --env 'AZURE_RESOURCE_GROUP=<+pipeline.variables.azure_resource_group>' \
                             --env 'AZURE_CONTAINER_APP_NAME=<+pipeline.variables.azure_container_app_name>' \
                             --env "IMAGE=$IMAGE" \
-                            --env 'ACR_LOGIN_SERVER=<+pipeline.variables.acr_login_server>' \
-                            --env 'ACR_USERNAME=<+secrets.getValue("account.acr_username")>' \
-                            --env 'ACR_PASSWORD=<+secrets.getValue("account.acr_password")>' \
                             "$AZURE_CLI_IMAGE" \
                             sh -c '
                               set -eu
