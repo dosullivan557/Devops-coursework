@@ -68,6 +68,7 @@ resource managedEnvironment 'Microsoft.App/managedEnvironments@2025-01-01' = {
   name: managedEnvironmentName
   location: location
   tags: tags
+  properties: {}
 }
 
 resource containerApp 'Microsoft.App/containerApps@2025-01-01' = {
