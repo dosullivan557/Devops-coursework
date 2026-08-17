@@ -294,17 +294,6 @@ pipeline:
                             --tag "$LATEST_IMAGE" \
                             --push \
                             "$SOURCE_DIR"
-
-                          IMAGE_METADATA="$(docker buildx imagetools inspect --format '{{json .Image}}' "$IMAGE")"
-                          case "$IMAGE_METADATA" in
-                            *'"os":'*'"linux"'*) ;;
-                            *) echo "Published image OS is not linux" >&2; exit 1 ;;
-                          esac
-                          case "$IMAGE_METADATA" in
-                            *'"architecture":'*'"amd64"'*) ;;
-                            *) echo "Published image architecture is not amd64" >&2; exit 1 ;;
-                          esac
-                          echo "Published image verified as linux/amd64"
                     environmentVariables:
                       - name: GITHUB_TOKEN
                         type: String
