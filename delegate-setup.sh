@@ -15,7 +15,7 @@ docker run --detach \
   --name local-delegate \
   --restart unless-stopped \
   --cpus 2 \
-  --memory 4g \
+  --memory 2g \
   --group-add 0 \
   --volume /var/run/docker.sock:/var/run/docker.sock \
   --env DELEGATE_NAME=local-delegate \
@@ -26,4 +26,3 @@ docker run --detach \
   --env DELEGATE_TAGS=local-delegate \
   --env MANAGER_HOST_AND_PORT=https://app.harness.io \
   "$DELEGATE_IMAGE"
-
