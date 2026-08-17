@@ -57,7 +57,7 @@ application sessions.
 - Permission to create managed identities and role assignments. The deployment
   principal typically needs `Owner` or `User Access Administrator` for the
   registry-scoped `AcrPull` assignment.
-- An initial `change-audit:0.2.6` image in the generated registry. Override the
+- A `linux/amd64` `change-audit:latest` image in the generated registry. Override the
   `containerImageTag` parameter if a different initial tag is available.
 
 Sign in and select the student subscription:

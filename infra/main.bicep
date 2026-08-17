@@ -29,8 +29,8 @@ param databaseName string = 'change_audit'
 @description('Name of the Azure Container App.')
 param containerAppName string = 'change-audit'
 
-@description('Initial application image tag. The image must already exist in ACR.')
-param containerImageTag string = '0.2.6'
+@description('Application image tag. The image must already exist in ACR.')
+param containerImageTag string = 'latest'
 
 @secure()
 @description('Secret used to sign application authentication tokens.')
