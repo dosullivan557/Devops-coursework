@@ -2,7 +2,6 @@ import type { Metadata } from "next";
 import { Geist, Geist_Mono, Oxanium, JetBrains_Mono } from "next/font/google";
 import { getServerSession } from "next-auth";
 
-import "./globals.css";
 import { authOptions } from "@/app/lib/auth";
 import { cn } from "@/lib/utils";
 import { AuthProvider } from "@/components/auth-provider";
@@ -10,6 +9,8 @@ import { ThemeProvider } from "@/components/theme-provider";
 import { AppSidebar } from "@/components/app-sidebar";
 import { SidebarInset, SidebarProvider } from "@/components/ui/sidebar";
 import { TooltipProvider } from "@/components/ui/tooltip";
+import {version} from '../package.json'
+import "./globals.css";
 
 const jetbrainsMonoHeading = JetBrains_Mono({
   subsets: ["latin"],
@@ -67,6 +68,9 @@ export default async function RootLayout({
                   <header className="sticky top-0 z-30 flex h-14 items-center border-b bg-background/80 px-4 backdrop-blur md:px-6">
                     <span className="text-sm text-muted-foreground">
                       Change Audit Portal
+                    </span>
+                    <span className="ml-auto text-sm text-muted-foreground">
+                      v{version}
                     </span>
                   </header>
                   {children}
