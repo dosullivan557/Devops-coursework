@@ -7,6 +7,7 @@ set -eu
 DELEGATE_IMAGE="change-audit/harness-delegate:26.07.89703-docker"
 RUNNER_VERSION="0.1.27"
 RUNNER_DIR="${HARNESS_RUNNER_DIR:-$PWD/.harness-runner}"
+DOCKER_SOCKET_GID="$(stat -c '%g' /var/run/docker.sock)"
 
 case "$(uname -m)" in
   x86_64)
@@ -38,6 +39,20 @@ fi
 
 printf '%s  %s\n' "$RUNNER_SHA256" "$RUNNER_BINARY" | sha256sum --check
 
+for container_id in $(
+  docker ps --all --quiet \
+    --filter "ancestor=$RUNNER_IMAGE"
+); do
+  docker rm --force "$container_id"
+done
+
+for container_id in $(
+  docker ps --all --quiet \
+    --filter "ancestor=$DELEGATE_IMAGE"
+); do
+  docker rm --force "$container_id"
+done
+
 docker rm --force local-harness-runner local-delegate >/dev/null 2>&1 || true
 
 docker build \
@@ -48,6 +63,7 @@ docker build \
 
 docker run --detach \
   --name local-harness-runner \
+  --label dev.change-audit.harness=true \
   --network host \
   --restart unless-stopped \
   --volume /var/run/docker.sock:/var/run/docker.sock \
@@ -71,11 +87,12 @@ docker build \
 
 docker run --detach \
   --name local-delegate \
+  --label dev.change-audit.harness=true \
   --network host \
   --restart unless-stopped \
   --cpus 2 \
   --memory 2g \
-  --group-add 0 \
+  --group-add "$DOCKER_SOCKET_GID" \
   --volume /var/run/docker.sock:/var/run/docker.sock \
   --env DELEGATE_NAME=local-delegate \
   --env NEXT_GEN=true \

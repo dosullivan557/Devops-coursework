@@ -54,6 +54,25 @@ case "$OPERATION" in
       --parameters authSecret="$AUTH_SECRET" \
       --query properties.outputs \
       --output json
+
+    DATABASE_SERVER_ID="$(az deployment group show \
+      --name "$DEPLOYMENT_NAME" \
+      --resource-group "$AZURE_RESOURCE_GROUP" \
+      --query properties.outputs.databaseServerId.value \
+      --output tsv)"
+    DATABASE_SERVER_NAME="${DATABASE_SERVER_ID##*/}"
+
+    if [ -z "$DATABASE_SERVER_NAME" ]; then
+      echo "Could not resolve the PostgreSQL server name from deployment outputs" >&2
+      exit 1
+    fi
+
+    echo "Synchronizing the PostgreSQL administrator password"
+    az postgres flexible-server update \
+      --resource-group "$AZURE_RESOURCE_GROUP" \
+      --name "$DATABASE_SERVER_NAME" \
+      --admin-password "$DATABASE_ADMIN_PASSWORD" \
+      --output none
     ;;
   *)
     echo "Usage: $0 plan|apply" >&2
