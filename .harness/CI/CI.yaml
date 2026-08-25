@@ -311,6 +311,7 @@ pipeline:
                           docker buildx build \
                             --platform linux/amd64 \
                             --file "$SOURCE_DIR/dockerfile" \
+                            --build-arg "APP_VERSION=$IMAGE_VERSION" \
                             --tag "$IMAGE" \
                             --tag "$LATEST_IMAGE" \
                             --push \

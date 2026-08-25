@@ -15,16 +15,21 @@ RUN npm ci
 # Build
 FROM base AS build
 
+ARG APP_VERSION
+
 COPY --from=dependencies /app/node_modules ./node_modules
 COPY . .
 
-RUN npm run build
+RUN test -n "$APP_VERSION" && npm run build
 
 # Run
 FROM base AS run
 
+ARG APP_VERSION
+
 ENV NODE_ENV=production
 ENV PORT=$PORT
+ENV APP_VERSION=$APP_VERSION
 
 RUN addgroup --system --gid 1001 nodejs
 RUN adduser --system --uid 1001 nextjs
