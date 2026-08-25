@@ -9,8 +9,10 @@ import { ThemeProvider } from "@/components/theme-provider";
 import { AppSidebar } from "@/components/app-sidebar";
 import { SidebarInset, SidebarProvider } from "@/components/ui/sidebar";
 import { TooltipProvider } from "@/components/ui/tooltip";
-import {version} from '../package.json'
+import { version as packageVersion } from "@/package.json";
 import "./globals.css";
+
+const appVersion = process.env.APP_VERSION ?? packageVersion;
 
 const jetbrainsMonoHeading = JetBrains_Mono({
   subsets: ["latin"],
@@ -70,7 +72,7 @@ export default async function RootLayout({
                       Change Audit Portal
                     </span>
                     <span className="ml-auto text-sm text-muted-foreground">
-                      v{version}
+                      v{appVersion}
                     </span>
                   </header>
                   {children}

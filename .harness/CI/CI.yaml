@@ -172,6 +172,27 @@ pipeline:
                         environmentVariables: []
                         outputVariables: []
                       timeout: 10m
+                  - step:
+                      type: ShellScript
+                      name: Unit Test
+                      identifier: UnitTest
+                      spec:
+                        shell: Bash
+                        executionTarget: {}
+                        delegateSelectors:
+                          - local-delegate
+                        source:
+                          type: Inline
+                          spec:
+                            script: |-
+                              set -eu
+                              BUILD_ROOT="/tmp/change-audit-<+pipeline.executionId>"
+                              export PATH="$BUILD_ROOT/node/bin:$PATH"
+                              cd "$BUILD_ROOT/source"
+                              npm run test
+                        environmentVariables: []
+                        outputVariables: []
+                      timeout: 10m
               - step:
                   type: ShellScript
                   name: Application Dry Build
@@ -290,6 +311,7 @@ pipeline:
                           docker buildx build \
                             --platform linux/amd64 \
                             --file "$SOURCE_DIR/dockerfile" \
+                            --build-arg "APP_VERSION=$IMAGE_VERSION" \
                             --tag "$IMAGE" \
                             --tag "$LATEST_IMAGE" \
                             --push \
