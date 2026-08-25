@@ -23,6 +23,6 @@ docker run --detach \
   --env DELEGATE_TYPE=DOCKER \
   --env ACCOUNT_ID=SCAtL6FxRQ2hX9-kLRGAzw \
   --env DELEGATE_TOKEN=NzIxZmU1YWRmZjYzODUwMDVkNmNhNjZhMDBjZjdhOWI= \
-  --env DELEGATE_TAGS=local-delegate \
+  --env DELEGATE_TAGS=local-delegate,linux-amd64 \
   --env MANAGER_HOST_AND_PORT=https://app.harness.io \
   "$DELEGATE_IMAGE"
