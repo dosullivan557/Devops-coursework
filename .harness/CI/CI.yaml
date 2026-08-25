@@ -7,7 +7,7 @@ pipeline:
   properties:
     ci:
       codebase:
-        connectorRef: <+input>
+        connectorRef: Github
         repoName: Devops-coursework
         build: <+input>
   variables:
